@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qingflow MCP Setup"
+  short_description: "Install and connect the Qingflow MCP locally"
+  default_prompt: "Use $qingflow-mcp-setup to install and connect the Qingflow MCP in a local AI client, and to verify the active base_url, qf_version, auth state, and workspace selection."

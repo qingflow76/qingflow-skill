@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qingflow Operations"
+  short_description: "Route Qingflow operational tasks to insert, update, delete, import, task ops, or analysis"
+  default_prompt: "Use $qingflow-operations as a router: switch to $qingflow-record-insert for new record entry, $qingflow-record-update for direct edits, $qingflow-record-delete for deletes, $qingflow-record-import for bulk import, $qingflow-task-ops for task-center, comments, directory, and workflow usage actions, and $qingflow-record-analysis for grouped analysis or final statistical conclusions."

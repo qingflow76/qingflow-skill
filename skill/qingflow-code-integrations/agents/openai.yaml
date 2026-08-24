@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qingflow Code Integrations"
+  short_description: "Configure Qingflow code block and Q-Linker fields safely"
+  default_prompt: "Use $qingflow-code-integrations when configuring Qingflow code block or Q-Linker fields, especially when input insertion, alias parsing, target field binding, or page-safety verification matter."

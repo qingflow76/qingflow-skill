@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qingflow App Form"
+  short_description: "Apply versioned declarative Qingflow app forms"
+  default_prompt: "Use $qingflow-app-form to safely create or update a Qingflow app form."

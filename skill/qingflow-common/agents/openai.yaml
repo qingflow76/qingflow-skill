@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qingflow Common Concepts"
+  short_description: "Route Qingflow work across CLI and MCP"
+  default_prompt: "Use $qingflow-common to choose the correct Qingflow CLI or MCP workflow."
