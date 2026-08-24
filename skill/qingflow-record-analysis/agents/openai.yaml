@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qingflow Record Analysis"
+  short_description: "Analyze Qingflow record data with record_access CSV and Python"
+  default_prompt: "Use $qingflow-record-analysis for grouped distributions, ratios, rankings, trends, and final statistical conclusions in Qingflow apps. Start with app_get and record_browse_schema_get, run record_access with field_id-based columns/where/order_by, then analyze every returned CSV shard with Python. Always run field-quality checks before choosing final grouping dimensions, and downgrade sparse dimensions to filled-sample observations. If record_access is not visible as an MCP tool, discover and use the CLI path qingflow record --help -> qingflow record access --help. Treat record_list as sample-only."

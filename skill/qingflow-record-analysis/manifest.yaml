@@ -1,0 +1,10 @@
+identity: qingflow-record-analysis
+type: skill
+description: Analyze Qingflow record data safely. Use when the user wants grouped distributions, ratios, averages, rankings, trends, insights, comparisons, or any final statistical conclusion across an existing app's data. Default to schema-first record_access CSV retrieval plus local Python/pandas; do not use export tools unless the user explicitly asks for a file download.
+tags:
+  - cli
+  - qingflow
+  - task-management
+  - data-analysis
+  - security
+  - validated
