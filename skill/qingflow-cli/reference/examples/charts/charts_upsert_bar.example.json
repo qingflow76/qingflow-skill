@@ -1,0 +1,8 @@
+[
+  {
+    "name": "示例柱状图",
+    "chart_type": "bar",
+    "group_by": ["REPLACE_WITH_DIMENSION_FIELD_NAME"],
+    "metric": "sum(REPLACE_WITH_NUMERIC_FIELD_NAME)"
+  }
+]

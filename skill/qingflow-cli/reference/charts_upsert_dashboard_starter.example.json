@@ -1,0 +1,118 @@
+[
+  {
+    "name": "数据总量",
+    "chart_type": "target",
+    "metric": "count(*)",
+    "visibility": {
+      "mode": "workspace",
+      "selectors": {},
+      "external_mode": "not",
+      "external_selectors": {}
+    }
+  },
+  {
+    "name": "进行中数量",
+    "chart_type": "target",
+    "metric": "count(*)",
+    "filters": [
+      {
+        "field_name": "REPLACE_WITH_STATUS_FIELD_NAME",
+        "operator": "eq",
+        "value": "进行中"
+      }
+    ],
+    "visibility": {
+      "mode": "workspace",
+      "selectors": {},
+      "external_mode": "not",
+      "external_selectors": {}
+    }
+  },
+  {
+    "name": "重点类型数量",
+    "chart_type": "target",
+    "metric": "count(*)",
+    "filters": [
+      {
+        "field_name": "REPLACE_WITH_TYPE_FIELD_NAME",
+        "operator": "in",
+        "values": ["重点", "高优先级"]
+      }
+    ],
+    "visibility": {
+      "mode": "workspace",
+      "selectors": {},
+      "external_mode": "not",
+      "external_selectors": {}
+    }
+  },
+  {
+    "name": "本月金额合计",
+    "chart_type": "target",
+    "metric": "sum(REPLACE_WITH_AMOUNT_FIELD_NAME)",
+    "filters": [
+      {
+        "field_name": "REPLACE_WITH_DATE_FIELD_NAME",
+        "operator": "gte",
+        "value": "2026-07-01"
+      },
+      {
+        "field_name": "REPLACE_WITH_DATE_FIELD_NAME",
+        "operator": "lte",
+        "value": "2026-07-31"
+      }
+    ],
+    "visibility": {
+      "mode": "workspace",
+      "selectors": {},
+      "external_mode": "not",
+      "external_selectors": {}
+    }
+  },
+  {
+    "name": "按状态分布",
+    "chart_type": "bar",
+    "group_by": ["REPLACE_WITH_STATUS_FIELD_NAME"],
+    "metric": "count(*)",
+    "filters": [
+      {
+        "field_name": "REPLACE_WITH_STATUS_FIELD_NAME",
+        "operator": "not_empty"
+      },
+      {
+        "field_name": "REPLACE_WITH_STATUS_FIELD_NAME",
+        "operator": "neq",
+        "value": "已作废"
+      }
+    ],
+    "visibility": {
+      "mode": "workspace",
+      "selectors": {},
+      "external_mode": "not",
+      "external_selectors": {}
+    }
+  },
+  {
+    "name": "按时间趋势",
+    "chart_type": "line",
+    "group_by": ["REPLACE_WITH_DATE_FIELD_NAME"],
+    "metric": "count(*)",
+    "filters": [
+      {
+        "field_name": "REPLACE_WITH_NAME_FIELD_NAME",
+        "operator": "contains",
+        "value": "示例关键词"
+      },
+      {
+        "field_name": "REPLACE_WITH_CLOSE_DATE_FIELD_NAME",
+        "operator": "is_empty"
+      }
+    ],
+    "visibility": {
+      "mode": "workspace",
+      "selectors": {},
+      "external_mode": "not",
+      "external_selectors": {}
+    }
+  }
+]

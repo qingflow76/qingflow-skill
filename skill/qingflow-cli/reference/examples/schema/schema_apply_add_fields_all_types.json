@@ -1,0 +1,78 @@
+[
+  {
+    "name": "QFCLI_AT_text",
+    "type": "text",
+    "as_data_title": true,
+    "description": "【本文件用法】字段能力覆盖探针，不是正式新建应用主模板。正式新建应用优先使用 form；完整系统优先使用 schema_multi_app_form_relation_layout.example.json。此文件用于测试 19 种搭建 type（另含远程查询/代码块所需辅助 text），关联字段 target_app_key 默认为本仓库实测模板应用 ead8ims5i401；其它租户请改成你方可读的目标应用 app_key。"
+  },
+  {"name": "QFCLI_AT_long_text", "type": "long_text"},
+  {"name": "QFCLI_AT_number", "type": "number"},
+  {"name": "QFCLI_AT_amount", "type": "amount"},
+  {"name": "QFCLI_AT_date", "type": "date"},
+  {"name": "QFCLI_AT_datetime", "type": "datetime"},
+  {"name": "QFCLI_AT_member", "type": "member"},
+  {"name": "QFCLI_AT_department", "type": "department", "department_scope": {"mode": "all"}},
+  {"name": "QFCLI_AT_single_select", "type": "single_select", "options": ["A", "B"]},
+  {"name": "QFCLI_AT_multi_select", "type": "multi_select", "options": ["X", "Y"]},
+  {"name": "QFCLI_AT_phone", "type": "phone"},
+  {"name": "QFCLI_AT_email", "type": "email"},
+  {"name": "QFCLI_AT_address", "type": "address"},
+  {"name": "QFCLI_AT_attachment", "type": "attachment", "as_data_cover": true},
+  {"name": "QFCLI_AT_boolean", "type": "boolean"},
+  {"name": "QFCLI_AT_ql_kw", "type": "text"},
+  {"name": "QFCLI_AT_ql_v1", "type": "text"},
+  {"name": "QFCLI_AT_ql_v2", "type": "text"},
+  {"name": "QFCLI_AT_cb_in", "type": "text"},
+  {"name": "QFCLI_AT_cb_out", "type": "text"},
+  {
+    "name": "QFCLI_AT_sub",
+    "type": "subtable",
+    "subfields": [
+      {"name": "QFCLI_AT_sub_c1", "type": "text"},
+      {"name": "QFCLI_AT_sub_c2", "type": "number"}
+    ]
+  },
+  {
+    "name": "QFCLI_AT_q_linker",
+    "type": "q_linker",
+    "q_linker_binding": {
+      "inputs": [{"field": {"name": "QFCLI_AT_ql_kw"}, "key": "k", "source": "query_param"}],
+      "request": {
+        "url": "https://httpbin.org/get",
+        "method": "GET",
+        "headers": [],
+        "query_params": [],
+        "body_type": 1,
+        "url_encoded_value": [],
+        "result_type": 1,
+        "auto_trigger": false,
+        "custom_button_text_enabled": true,
+        "custom_button_text": "查"
+      },
+      "outputs": [
+        {"alias": "a", "path": "$.headers.Host", "target_field": {"name": "QFCLI_AT_ql_v1"}},
+        {"alias": "b", "path": "$.url", "target_field": {"name": "QFCLI_AT_ql_v2"}}
+      ]
+    }
+  },
+  {
+    "name": "QFCLI_AT_code_block",
+    "type": "code_block",
+    "code_block_binding": {
+      "inputs": [{"field": {"name": "QFCLI_AT_cb_in"}, "var": "x"}],
+      "code": "qf_output = {}; qf_output.r = x ? '1' : '0';",
+      "auto_trigger": false,
+      "custom_button_text_enabled": true,
+      "custom_button_text": "运行",
+      "outputs": [{"alias": "r", "path": "$.r", "target_field": {"name": "QFCLI_AT_cb_out"}}]
+    }
+  },
+  {
+    "name": "QFCLI_AT_relation",
+    "type": "relation",
+    "target_app_key": "ead8ims5i401",
+    "relation_mode": "single",
+    "display_field": {"name": "单行文字"},
+    "visible_fields": [{"name": "多行文字"}]
+  }
+]

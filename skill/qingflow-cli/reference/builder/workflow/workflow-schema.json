@@ -1,0 +1,1754 @@
+{
+    "type": "object",
+    "title": "WorkflowSpecDTO",
+    "description": null,
+    "properties": {
+        "nodes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "$ref": "#/$defs/WorkflowNodeDTO"
+            },
+            "description": "工作流节点列表(nodes)。须有且仅有一个 type=applicant；分支用 type=gateway(mode=parallel)；汇合用 gateway(mode=join)。patterns.md#P03"
+        },
+        "edges": {
+            "$ref": "#/$defs/WorkflowEdgesDTO",
+            "description": "边容器(edges.edges[])：显式 from/to 列表；fork 出边≥2 且 from=gateway.id；须保持 DAG"
+        }
+    },
+    "required": [
+        "nodes",
+        "edges"
+    ],
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "x-schema-levels": {
+        "levels": [
+            {
+                "name": "workflow-level",
+                "scope": "root schema",
+                "handles": "top-level orchestration fields such as nodes/edges"
+            },
+            {
+                "name": "node-type-level",
+                "scope": "$defs node entries",
+                "handles": "node-specific fields, polymorphism, and node constraints"
+            },
+            {
+                "name": "shared-definitions-level",
+                "scope": "$defs reusable types",
+                "handles": "shared structures, reusable constraints, and common resource metadata"
+            }
+        ],
+        "description": "Schema is organized into three levels for readability and stable evolution"
+    },
+    "$defs": {
+        "NodeAttrsDTO": {
+            "type": "object",
+            "description": "节点属性基类(attrs)，按 type 多态为各节点 *AttrsDTO",
+            "properties": {},
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/CCAttrsDTO"
+                },
+                {
+                    "$ref": "#/$defs/FillingAttrsDTO"
+                },
+                {
+                    "$ref": "#/$defs/ApplicantAttrsDTO"
+                },
+                {
+                    "$ref": "#/$defs/AutomationAttrsDTO"
+                },
+                {
+                    "$ref": "#/$defs/ApprovalAttrsDTO"
+                },
+                {
+                    "$ref": "#/$defs/GatewayAttrsDTO"
+                }
+            ],
+            "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                    "cc": "#/$defs/CCAttrsDTO",
+                    "filling": "#/$defs/FillingAttrsDTO",
+                    "applicant": "#/$defs/ApplicantAttrsDTO",
+                    "approval": "#/$defs/ApprovalAttrsDTO",
+                    "gateway": "#/$defs/GatewayAttrsDTO"
+                }
+            },
+            "x-polymorphic-base": "com.qflow.backend.workflow.spec.dto.common.WorkflowSpecNodes$NodeAttrsDTO"
+        },
+        "WorkflowNodeDTO": {
+            "type": "object",
+            "description": "工作流节点。type 决定业务类型与 attrs 结构：applicant、filling、approval、gateway、cc、automation(按 subType 细分)",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "节点唯一 id，在 nodes 中唯一",
+                    "minLength": 1
+                },
+                "type": {
+                    "type": "string",
+                    "description": "节点类型(type)。gateway=并行 fork/join；automation 见 *AttrsDTO",
+                    "comment": "applicant | filling | approval | gateway | automation | cc",
+                    "enum": [
+                        "applicant",
+                        "filling",
+                        "approval",
+                        "gateway",
+                        "cc",
+                        "automation"
+                    ]
+                },
+                "name": {
+                    "type": "string",
+                    "description": "节点显示名称，流程图中展示",
+                    "minLength": 1
+                },
+                "sync": {
+                    "type": "boolean",
+                    "description": "是否同步执行(sync)。true 时下游须等本节点完成"
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "description": "是否启用(enabled)。false 时节点跳过"
+                },
+                "role": {
+                    "type": "string",
+                    "description": "语义角色标记(role)，可选，用于扩展标识"
+                },
+                "attrs": {
+                    "oneOf": [
+                        {
+                            "$ref": "#/$defs/CCAttrsDTO"
+                        },
+                        {
+                            "$ref": "#/$defs/FillingAttrsDTO"
+                        },
+                        {
+                            "$ref": "#/$defs/ApplicantAttrsDTO"
+                        },
+                        {
+                            "$ref": "#/$defs/AutomationAttrsDTO"
+                        },
+                        {
+                            "$ref": "#/$defs/ApprovalAttrsDTO"
+                        },
+                        {
+                            "$ref": "#/$defs/GatewayAttrsDTO"
+                        }
+                    ],
+                    "discriminator": {
+                        "propertyName": "type",
+                        "mapping": {
+                            "cc": "#/$defs/CCAttrsDTO",
+                            "filling": "#/$defs/FillingAttrsDTO",
+                            "applicant": "#/$defs/ApplicantAttrsDTO",
+                            "approval": "#/$defs/ApprovalAttrsDTO",
+                            "gateway": "#/$defs/GatewayAttrsDTO"
+                        }
+                    },
+                    "x-polymorphic-base": "com.qflow.backend.workflow.spec.dto.common.WorkflowSpecNodes$NodeAttrsDTO",
+                    "description": "节点专属属性(attrs)，随 type 多态为各 *AttrsDTO"
+                }
+            },
+            "required": [
+                "id",
+                "type",
+                "name",
+                "attrs"
+            ]
+        },
+        "FilterRuleDTO": {
+            "type": "object",
+            "description": "单条筛选规则(FilterRule)。FilterRule 上下文：condition.autoJudges→fieldId 源应用、仅 literal；targetFilterRules→fieldId 目标应用、literal|field_ref；tableFilterRules.filterRules→fieldId 源子表子字段、仅 literal。 条件节点 autoJudges 仅 literal；Q-Robot targetFilterRules 可用 field_ref。",
+            "properties": {
+                "fieldId": {
+                    "type": "integer",
+                    "description": "被比较字段 id(fieldId)"
+                },
+                "fieldType": {
+                    "type": "string",
+                    "description": "字段类型(fieldType)，决定可用 judgeType 与 values 形态。完整枚举见 single_line_text 等；草案常用简称 text/single_select/amount 与引擎字段类型对应",
+                    "enum": [
+                        "single_line_text",
+                        "multi_line_text",
+                        "date",
+                        "member",
+                        "email",
+                        "mobile",
+                        "number",
+                        "link",
+                        "single_option",
+                        "dropdown",
+                        "multi_option",
+                        "date_range",
+                        "image_select",
+                        "relation",
+                        "address",
+                        "dept",
+                        "encrypted_text",
+                        "text",
+                        "single_select",
+                        "amount"
+                    ]
+                },
+                "matchType": {
+                    "type": "string",
+                    "description": "比较侧来源(matchType)：literal=与 values 字面量比较；field_ref=values[0] 为源 fieldId 字符串，用于 Q-Robot 定位目标记录",
+                    "enum": [
+                        "literal",
+                        "field_ref"
+                    ]
+                },
+                "judgeType": {
+                    "type": "string",
+                    "description": "判断符(judgeType)。单值比较(equals/includes/greater_than 等)通常 values 仅 1 项；equals_any/include_any 允许多项；dynamic_range 用于日期；range 用于数字区间 values[0]='min,max'",
+                    "enum": [
+                        "equals",
+                        "not_equals",
+                        "includes",
+                        "not_includes",
+                        "greater_than",
+                        "greater_than_or_equals",
+                        "less_than",
+                        "less_than_or_equals",
+                        "dynamic_range",
+                        "equals_any",
+                        "not_equals_any",
+                        "belong_to",
+                        "not_belong_to",
+                        "subordinate_to",
+                        "not_subordinate_to",
+                        "subordinate_included",
+                        "subordinate_not_included",
+                        "fuzzy_match",
+                        "include_any",
+                        "include_all",
+                        "range"
+                    ]
+                },
+                "values": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "比较值(values)，string 数组。个数与格式依 fieldType+judgeType：单值 judge 填 1 项；选项类可填展示文案或 optId；field_ref 时填源 fieldId 如 [\"343283769\"]",
+                    "comment": "条件示例:{\"fieldId\":343283771,\"fieldType\":\"single_select\",\"matchType\":\"literal\",\"judgeType\":\"equals\",\"values\":[\"A级\"]}; 更新定位示例:{\"matchType\":\"field_ref\",\"judgeType\":\"equals\",\"values\":[\"343283769\"]}"
+                }
+            },
+            "required": [
+                "fieldId",
+                "fieldType",
+                "matchType",
+                "judgeType"
+            ],
+            "x-constraints": [
+                {
+                    "description": "按使用场景区分 fieldId 归属：targetFilterRules→目标应用(appKey)；tableFilterRules.filterRules→源应用子表子字段；field_ref 仅用于 targetFilterRules。"
+                }
+            ]
+        },
+        "FilterRuleGroupDTO": {
+            "type": "array",
+            "minItems": 1,
+            "x-json-value": "rules",
+            "items": {
+                "$ref": "#/$defs/FilterRuleDTO"
+            },
+            "description": "筛选规则组(FilterRuleGroup)。JSON 线格式为 @JsonValue 数组(非 {rules:[]} 对象)：组内 FilterRuleDTO 为 AND；多个 FilterRuleGroup 之间为 OR（用于条件节点、Q-Robot 更新定位等）"
+        },
+        "EdgeConditionDTO": {
+            "type": "object",
+            "description": "边条件(condition)。kind=rules：autoJudges 命中时激活本边，同一 fork 点多条 rules 边构成互斥选路(P03a)。kind=default：兜底边(P03a)或并行激活边(P03b)；parallel fork 允许多条 default。省略 condition=无条件线性边。autoJudges 选项值须与表单 label 一致(patterns.md#P05)。",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "description": "条件类型(kind)。rules=按 autoJudges 互斥选路(P03a)；default=兜底或并行激活(P03b)",
+                    "enum": [
+                        "default",
+                        "rules"
+                    ]
+                },
+                "autoJudges": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/FilterRuleGroupDTO"
+                    },
+                    "description": "规则组(autoJudges)，kind=rules 时必填；OR 组间、组内 AND。 values 须与表单选项 label 完全一致(patterns.md#P05)"
+                }
+            },
+            "required": [
+                "kind"
+            ],
+            "x-constraints": [
+                {
+                    "if": "properties.kind.const='rules'",
+                    "then": "required=['autoJudges']",
+                    "description": "rules kind requires non-empty autoJudges"
+                }
+            ],
+            "x-condition-constraints": [
+                "autoJudges follows OR-of-AND grouping",
+                "judgeType and fieldType must be semantically compatible"
+            ]
+        },
+        "WorkflowEdgeDTO": {
+            "type": "object",
+            "description": "工作流边(edge)：from/to 引用 nodes[].id。 分支出边见 分支出边：from 须为 type=gateway 且 attrs.mode=parallel 的节点 id；to 为该分支首节点。条件选路(P03a)用 condition.kind=rules；兜底或并行(P03b)用 default 或省略 condition。 省略 condition=无条件线性边。",
+            "properties": {
+                "from": {
+                    "type": "string",
+                    "description": "源节点 id(from)。parallel fork 时为本 gateway.id；线性边为上游业务节点 id",
+                    "minLength": 1
+                },
+                "to": {
+                    "type": "string",
+                    "description": "目标节点 id(to)。须存在于 nodes[].id，且不得形成环(DAG)",
+                    "minLength": 1
+                },
+                "label": {
+                    "type": "string",
+                    "description": "边展示标签(label)"
+                },
+                "priority": {
+                    "type": "integer",
+                    "description": "优先级(priority)，多条规则边同时命中时数值小者优先"
+                },
+                "condition": {
+                    "$ref": "#/$defs/EdgeConditionDTO",
+                    "description": "边条件(condition)；省略=无条件边。kind/rules/default 语义见 EdgeConditionDTO"
+                }
+            },
+            "required": [
+                "from",
+                "to"
+            ]
+        },
+        "WorkflowEdgesDTO": {
+            "type": "object",
+            "description": "边容器(edges)：主字段 edges 为 WorkflowEdgeDTO 列表",
+            "properties": {
+                "edges": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/WorkflowEdgeDTO"
+                    },
+                    "description": "显式边列表(edges)：每项 from/to 引用 nodes[].id"
+                }
+            },
+            "required": [
+                "edges"
+            ]
+        },
+        "TimeoutDurationDTO": {
+            "type": "object",
+            "description": "超时时长(duration)：数值 + 单位，对应 legacy timeoutValue + timeoutType(单位)",
+            "properties": {
+                "value": {
+                    "type": "integer",
+                    "description": "时长数值(value)，对应 legacy compareValue / timeoutValue 整数部分"
+                },
+                "unit": {
+                    "type": "string",
+                    "description": "时间单位(unit)：day|hour|minute|workday|national_workday",
+                    "enum": [
+                        "day",
+                        "hour",
+                        "minute",
+                        "workday",
+                        "national_workday"
+                    ]
+                }
+            },
+            "required": [
+                "value",
+                "unit"
+            ]
+        },
+        "TableRowOperationsDTO": {
+            "type": "object",
+            "description": "子表行操作策略(tableRowOperations)：仅当 fieldMappings.fieldId 为目标子表时使用。add_rows=追加行；replace_table=整表覆盖；update_rows=更新已有行(前置：targetFilterRules 须含该目标子表子字段筛选)。",
+            "properties": {
+                "strategy": {
+                    "type": "string",
+                    "description": "策略(strategy)：add_rows=向目标子表追加行；update_rows=更新目标子表已有行(须 targetFilterRules 含该目标子表子字段筛选)；replace_table=整表覆盖",
+                    "enum": [
+                        "add_rows",
+                        "update_rows",
+                        "replace_table"
+                    ]
+                },
+                "fieldMappings": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/QRobotRelationRuleDTO"
+                    },
+                    "description": "子表内子字段映射(fieldMappings)，结构与 QRobotRelationRuleDTO 相同"
+                },
+                "addWhenNoMatch": {
+                    "type": "boolean",
+                    "description": "update_rows 专用：目标子表按 targetFilterRules 无匹配行时是否新增行(addWhenNoMatch)"
+                },
+                "addRule": {
+                    "type": "string",
+                    "description": "addWhenNoMatch=true 时的新增行规则(addRule)，如 copy_row/new_default_row"
+                }
+            },
+            "required": [
+                "strategy"
+            ]
+        },
+        "QRobotRelationRuleDTO": {
+            "type": "object",
+            "description": "Q-Robot 字段映射(fieldMappings)：将源表单或字面量写入目标应用 fieldId",
+            "properties": {
+                "fieldId": {
+                    "type": "integer",
+                    "description": "目标应用中的字段 id(fieldId)"
+                },
+                "matchType": {
+                    "type": "string",
+                    "description": "赋值来源(matchType)：literal=常量/结构化字面量；field_ref=引用当前流程表单字段 id",
+                    "enum": [
+                        "literal",
+                        "field_ref"
+                    ]
+                },
+                "values": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "description": "简单字面量或 matchType=field_ref 时的源 fieldId 字符串"
+                            },
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "$ref": "#/$defs/LiteralAssignmentValueDTO"
+                            }
+                        ]
+                    },
+                    "description": "赋值载荷(values)。literal：string/number/boolean、{\"value\":\"已审核\"} 或 LiteralAssignmentValueDTO；field_ref：源 fieldId 字符串数组",
+                    "comment": "literal简写:[{\"value\":\"已审核\"}]; field_ref:[\"343283769\"]; 复杂字面量:[{\"valueType\":\"option\",\"value\":\"123\"}]"
+                },
+                "tableRowOperations": {
+                    "$ref": "#/$defs/TableRowOperationsDTO",
+                    "description": "目标子表行操作策略(tableRowOperations)：fieldId 为目标子表(QUE_TYPE_TABLE)时使用。 子表行操作策略(tableRowOperations)：仅当 fieldMappings.fieldId 为目标子表时使用。add_rows=追加行；replace_table=整表覆盖；update_rows=更新已有行(前置：targetFilterRules 须含该目标子表子字段筛选)。"
+                }
+            },
+            "required": [
+                "fieldId",
+                "matchType",
+                "values"
+            ]
+        },
+        "MissAddConfigDTO": {
+            "type": "object",
+            "properties": {}
+        },
+        "AutomationTableFilterRuleDTO": {
+            "type": "object",
+            "description": "源应用单个子表的行筛选：对应编辑器「表格筛选条件」中的一条子表配置",
+            "properties": {
+                "tableFieldId": {
+                    "type": "integer",
+                    "description": "源应用(当前流程)子表 fieldId(tableFieldId)。不是 attrs.appKey 目标应用的子表",
+                    "comment": "示例：源流程订单明细子表 queId；勿填目标应用子表 id"
+                },
+                "filterRules": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/FilterRuleGroupDTO"
+                    },
+                    "description": "对该源子表行的筛选组(filterRules)：OR 组内 AND。 FilterRuleDTO.fieldId 必须是 tableFieldId 下子字段(源应用)，仅 matchType=literal。 FilterRule 上下文：condition.autoJudges→fieldId 源应用、仅 literal；targetFilterRules→fieldId 目标应用、literal|field_ref；tableFilterRules.filterRules→fieldId 源子表子字段、仅 literal。"
+                }
+            },
+            "required": [
+                "tableFieldId",
+                "filterRules"
+            ]
+        },
+        "AutomationUpdateAttrsDTO": {
+            "type": "object",
+            "description": "Q-Robot 更新(subType=update)：targetFilterRules 定位目标行，fieldMappings 写字段。【Q-Robot 三层筛选】① tableFilterRules=编辑器「表格筛选条件」，筛源应用(当前流程)子表行，legacy tableFilterCondition；② targetFilterRules=编辑器「更新哪些数据」，筛目标应用(appKey)主记录/目标子表行，legacy qrobotQueFilterFormula/filterCondition；③ fieldMappings[].tableRowOperations=「表格更新规则」，写目标子表行内容。目标子表行定位写在 targetFilterRules，不要写在 tableFilterRules。",
+            "properties": {
+                "appKey": {
+                    "type": "string",
+                    "description": "目标应用 appKey",
+                    "minLength": 1,
+                    "x-resource-ref": {
+                        "resourceType": "application",
+                        "guidance": "Select an application to update"
+                    }
+                },
+                "targetFilterRules": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/FilterRuleGroupDTO"
+                    },
+                    "description": "更新哪些数据(targetFilterRules)：编辑器「更新哪些数据/+筛选数据」。fieldId 属于目标应用(appKey)；matchType=field_ref 时 values[0] 为源应用 fieldId 字符串。若按目标子表某行定位主记录，在此对目标子表的子字段写筛选(非 tableFilterRules)。Legacy qrobotQueFilterFormula / filterCondition。"
+                },
+                "fieldMappings": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/QRobotRelationRuleDTO"
+                    },
+                    "description": "字段映射(fieldMappings)：更新哪些字段及取值"
+                },
+                "missAdd": {
+                    "$ref": "#/$defs/MissAddConfigDTO",
+                    "description": "未匹配到记录时是否新增(missAdd)"
+                },
+                "tableFilterRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/AutomationTableFilterRuleDTO"
+                    },
+                    "description": "源应用表格筛选(tableFilterRules)：编辑器「表格筛选条件」。在映射写入目标应用前，限定当前流程(源应用)子表参与操作的行。tableFieldId 为源子表 fieldId；filterRules 内 fieldId 须为该源子表下的子字段，仅 matchType=literal。Legacy tableFilterCondition。与 targetFilterRules 无关。"
+                }
+            },
+            "required": [
+                "appKey",
+                "targetFilterRules",
+                "fieldMappings"
+            ]
+        },
+        "MemberRefDTO": {
+            "type": "object",
+            "description": "成员引用(MemberRef)：对应设计器节点负责人（成员/部门/角色/动态 Tab）",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "负责人来源(type)。静态：user(uid)、dept(deptId)、role(roleId)。动态：applicant；leader(queId=5 申请人部门主管，否则 queId 须为 fieldType=dept 的字段)；nodeLeader(当前节点负责人，无需 id)；formEmail(queId 须 fieldType=email)；formMember(queId 须 fieldType=member，含表格子字段)；formDept(queId 须 fieldType=dept)。",
+                    "comment": "{\"type\":\"user\",\"uid\":1001} | {\"type\":\"leader\",\"queId\":5} | {\"type\":\"formEmail\",\"queId\":343283769} | {\"type\":\"formMember\",\"queId\":343283769}",
+                    "enum": [
+                        "user",
+                        "dept",
+                        "role",
+                        "applicant",
+                        "leader",
+                        "formEmail",
+                        "formMember",
+                        "formDept",
+                        "nodeLeader"
+                    ]
+                },
+                "uid": {
+                    "type": "integer",
+                    "description": "用户 id(uid)，type=user 时必填",
+                    "x-resource-ref": {
+                        "resourceType": "member",
+                        "guidance": "Search workspace users when type=user"
+                    }
+                },
+                "deptId": {
+                    "type": "integer",
+                    "description": "部门 id(deptId)，type=dept 时必填",
+                    "x-resource-ref": {
+                        "resourceType": "member",
+                        "guidance": "Search workspace departments when type=dept"
+                    }
+                },
+                "roleId": {
+                    "type": "integer",
+                    "description": "角色 id(roleId)，type=role 时必填",
+                    "x-resource-ref": {
+                        "resourceType": "member",
+                        "guidance": "Search workspace roles when type=role"
+                    }
+                },
+                "queId": {
+                    "type": "integer",
+                    "description": "表单字段 id(queId)。leader/formEmail/formMember/formDept 时必填。选字段时按 fieldType 过滤：formEmail→email，formMember→member，formDept→dept，leader(非5)→dept；与 qingflow CLI 应用字段类型、FilterRuleDTO.fieldType 同名。",
+                    "x-resource-ref": {
+                        "resourceType": "formField",
+                        "guidance": "Resolve field by title/id from current app; filter by fieldType: formEmail=email, formMember=member, formDept=dept, leader(dept field)=dept, leader(applicant)=queId 5"
+                    }
+                },
+                "havingSubDept": {
+                    "type": "boolean",
+                    "description": "是否包含子部门(havingSubDept)，type=dept 时可选"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "x-constraints": [
+                {
+                    "description": "type 决定必填字段与 queId 字段类型(filter)：user→uid；dept→deptId；role→roleId；applicant 无 id；leader→queId(5 或 fieldType=dept)；formEmail→fieldType=email；formMember→fieldType=member；formDept→fieldType=dept。fieldType 与 CLI/FilterRuleDTO 一致(email/member/dept 等)"
+                }
+            ]
+        },
+        "PreTimeoutConfigDTO": {
+            "type": "object",
+            "description": "超时预警(preTimeout)：超时到达前的提醒配置",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "是否开启预警(enabled)"
+                },
+                "duration": {
+                    "$ref": "#/$defs/TimeoutDurationDTO",
+                    "description": "预警提前量(duration)"
+                },
+                "notifiers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/MemberRefDTO"
+                    },
+                    "description": "预警通知人(notifiers)"
+                },
+                "notifyCurrentAuditor": {
+                    "type": "boolean",
+                    "description": "是否通知当前节点负责人(notifyCurrentAuditor)，默认 true"
+                }
+            },
+            "required": [
+                "enabled",
+                "duration"
+            ]
+        },
+        "TimeoutConfigDTO": {
+            "type": "object",
+            "description": "超时与预警(timeoutConfig)：用于审批/填写节点，控制超时提醒、通知人与自动处理",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "超时来源(type/mode)：custom=固定时长；form=取自表单日期字段",
+                    "enum": [
+                        "custom",
+                        "form"
+                    ]
+                },
+                "duration": {
+                    "$ref": "#/$defs/TimeoutDurationDTO",
+                    "description": "自定义超时时长(duration)，type=custom 时必填"
+                },
+                "timeoutQueId": {
+                    "type": "integer",
+                    "description": "表单字段 id(timeoutQueId)，type=form 时必填"
+                },
+                "timeoutCompareType": {
+                    "type": "string",
+                    "description": "与字段日期的比较方式(timeoutCompareType)，type=form 时使用",
+                    "enum": [
+                        "current",
+                        "before",
+                        "after"
+                    ]
+                },
+                "offset": {
+                    "$ref": "#/$defs/TimeoutDurationDTO",
+                    "description": "相对字段日期的偏移量(offset)，type=form 且 before/after 时必填"
+                },
+                "timeOfDay": {
+                    "type": "string",
+                    "description": "表单日期当天的具体时刻(timeOfDay)，格式 HH:mm，type=form 且 compare=current 时可选"
+                },
+                "autoDeal": {
+                    "type": "boolean",
+                    "description": "超时后自动处理(autoDeal)"
+                },
+                "notifyCurrentAuditor": {
+                    "type": "boolean",
+                    "description": "是否通知当前节点负责人(notifyCurrentAuditor)，默认 true"
+                },
+                "notifiers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/MemberRefDTO"
+                    },
+                    "description": "超时通知人(notifiers)，可含 nodeLeader/user/role 等"
+                },
+                "remindType": {
+                    "type": "string",
+                    "description": "提醒类型(remindType)：immediate=立即；fixed_time=指定时间",
+                    "enum": [
+                        "immediate",
+                        "fixed_time"
+                    ]
+                },
+                "preTimeout": {
+                    "$ref": "#/$defs/PreTimeoutConfigDTO",
+                    "description": "超时预警(preTimeout)"
+                },
+                "timeoutValue": {
+                    "type": "string",
+                    "description": "已废弃：请使用 duration；兼容旧草案如 2d/3h"
+                },
+                "timeoutWarning": {
+                    "type": "boolean",
+                    "description": "已废弃：请使用 preTimeout.enabled"
+                },
+                "timeoutWarningType": {
+                    "type": "integer",
+                    "description": "已废弃：请使用 preTimeout.duration"
+                },
+                "timeoutWarningValue": {
+                    "type": "string",
+                    "description": "已废弃：请使用 preTimeout.duration"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "x-constraints": [
+                {
+                    "if": "properties.type.const='custom'",
+                    "then": "required=['duration']",
+                    "else": "required=['timeoutQueId']",
+                    "description": "Custom timeout requires duration; form timeout requires timeoutQueId"
+                }
+            ]
+        },
+        "MailFileDTO": {
+            "type": "object",
+            "description": "邮件附件来源(mailFiles 项)",
+            "properties": {
+                "type": {
+                    "type": "integer",
+                    "description": "附件来源类型(type)：决定使用 fieldId(表单附件字段) 或 printKey(打印模板)"
+                },
+                "printKey": {
+                    "type": "string",
+                    "description": "打印模板 key(printKey)，type 为打印模板时使用"
+                },
+                "fieldId": {
+                    "type": "integer",
+                    "description": "表单附件字段 id(fieldId)，type 为字段附件时使用"
+                }
+            }
+        },
+        "QRobotMailConfigDTO": {
+            "type": "object",
+            "description": "Q-Robot 发邮件配置(mailConfig)：发件人、主题、正文与附件；收件人见 AutomationSendEmailAttrsDTO.mailReceivers",
+            "properties": {
+                "mailSender": {
+                    "$ref": "#/$defs/MemberRefDTO",
+                    "description": "发件人(mailSender)，MemberRef 指定用户/部门/角色/申请人"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "邮件主题(title)：纯文本或 HTML；可含字段占位符(通常由 UI 生成 {$$...$$} 编码)，CLI 可先填静态文案",
+                    "comment": "示例:\"【CRM】新客户审核通过\""
+                },
+                "content": {
+                    "type": "string",
+                    "description": "邮件正文(content)：纯文本或 HTML；可插入当前流程表单字段值(占位符由 CustomPushContentConverter 解析)",
+                    "comment": "示例:\"客户已通过审核，请安排首次跟进。\""
+                },
+                "mailFiles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/MailFileDTO"
+                    },
+                    "description": "附件列表(mailFiles)"
+                }
+            }
+        },
+        "AutomationSendEmailAttrsDTO": {
+            "type": "object",
+            "description": "Q-Robot 发邮件(subType=send_email)：按 mailConfig 与 mailReceivers 发送邮件通知",
+            "properties": {
+                "mailConfig": {
+                    "$ref": "#/$defs/QRobotMailConfigDTO",
+                    "description": "邮件配置(mailConfig)：发件人、主题、正文与附件"
+                },
+                "mailReceivers": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/MemberRefDTO"
+                    },
+                    "description": "邮件收件人(mailReceivers)：用户/部门/角色/字段，至少一人"
+                }
+            },
+            "required": [
+                "mailConfig",
+                "mailReceivers"
+            ]
+        },
+        "WebhookExtractorDTO": {
+            "type": "object",
+            "description": "Webhook 入站解析提取器：按 type 填写 path/pattern/value 等",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "提取类型(type)：literal=固定 value；jsonpath/xpath=用 path 从 body 提取；regex=用 pattern+group 从文本提取",
+                    "enum": [
+                        "literal",
+                        "jsonpath",
+                        "xpath",
+                        "regex"
+                    ]
+                },
+                "path": {
+                    "type": "string",
+                    "description": "JSONPath/XPath 路径(path)，type=jsonpath 或 xpath 时必填"
+                },
+                "pattern": {
+                    "type": "string",
+                    "description": "正则表达式(pattern)，type=regex 时必填"
+                },
+                "group": {
+                    "type": "integer",
+                    "description": "正则捕获组索引(group)，type=regex 时使用，默认 0"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "字面量(value)，type=literal 时必填"
+                },
+                "allowWholeBody": {
+                    "type": "boolean",
+                    "description": "是否允许整包 body 提取(allowWholeBody)"
+                }
+            },
+            "required": [
+                "type"
+            ]
+        },
+        "WebhookParseRuleDTO": {
+            "type": "object",
+            "description": "Webhook 响应解析规则：将 HTTP 响应映射到当前应用字段",
+            "properties": {
+                "targetFieldId": {
+                    "type": "integer",
+                    "description": "目标字段 id(targetFieldId)：当前应用字段 queId"
+                },
+                "valueShape": {
+                    "type": "string",
+                    "description": "值形态(valueShape)：scalar 或 table 子行"
+                },
+                "extractor": {
+                    "$ref": "#/$defs/WebhookExtractorDTO",
+                    "description": "提取器(extractor)：jsonpath/xpath/regex/literal"
+                },
+                "tableRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/WebhookParseRuleDTO"
+                    },
+                    "description": "子表字段解析规则(tableRules)"
+                }
+            },
+            "required": [
+                "targetFieldId",
+                "extractor"
+            ]
+        },
+        "RemoteHttpRequestConfigDTO": {
+            "type": "object",
+            "description": "远程 HTTP 请求配置(remoteRequestConfig)：Q-Robot http_request 子类型使用",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "请求 URL(url)"
+                },
+                "method": {
+                    "type": "string",
+                    "description": "HTTP 方法(method)，如 GET/POST"
+                },
+                "triggerType": {
+                    "type": "integer",
+                    "description": "触发模式(triggerType)：1=默认(发送整单 ApplyDetailInfo)；2=自定义(使用 jsonValue/xmlValue 模板)。有 jsonValue/xmlValue 且未显式传值时 Apply 推断为 2",
+                    "enum": [
+                        "1",
+                        "2"
+                    ]
+                },
+                "bodyType": {
+                    "type": "integer",
+                    "description": "请求体格式(bodyType)：决定使用 jsonValue 还是 xmlValue"
+                },
+                "jsonValue": {
+                    "type": "string",
+                    "description": "JSON 请求体模板(jsonValue)：合法 JSON 字符串；bodyType 为 JSON 时使用。可静态如 {\"event\":\"customer.approved\"}，也可含字段占位符",
+                    "comment": "示例:\"{\\\"event\\\":\\\"customer.approved\\\"}\""
+                },
+                "xmlValue": {
+                    "type": "string",
+                    "description": "XML 请求体模板(xmlValue)：bodyType 为 XML 时使用"
+                },
+                "resultType": {
+                    "type": "integer",
+                    "description": "期望响应类型(resultType)"
+                },
+                "updateStatus": {
+                    "type": "boolean",
+                    "description": "是否用响应更新表单字段(updateStatus)"
+                },
+                "globalWebhookConfigId": {
+                    "type": "integer",
+                    "description": "引用的全局 Webhook 配置 id(globalWebhookConfigId)"
+                },
+                "globalAuthId": {
+                    "type": "integer",
+                    "description": "引用的全局鉴权 id(globalAuthId)"
+                },
+                "configMode": {
+                    "type": "integer",
+                    "description": "配置模式(configMode)"
+                },
+                "wingsAgentId": {
+                    "type": "integer",
+                    "description": "Wings Agent id(wingsAgentId)"
+                },
+                "wingsSkillId": {
+                    "type": "integer",
+                    "description": "Wings Skill id(wingsSkillId)"
+                },
+                "beingInsertValueDirectly": {
+                    "type": "boolean",
+                    "description": "是否直接将原始响应写入字段(beingInsertValueDirectly)"
+                },
+                "parseRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/WebhookParseRuleDTO"
+                    },
+                    "description": "响应解析规则(parseRules)：updateStatus=true 时写入 draft_webhook_parse"
+                }
+            },
+            "required": [
+                "url"
+            ]
+        },
+        "AutomationHttpRequestAttrsDTO": {
+            "type": "object",
+            "description": "Q-Robot 远程请求(subType=http_request)：调用外部 HTTP 接口",
+            "properties": {
+                "remoteRequestConfig": {
+                    "$ref": "#/$defs/RemoteHttpRequestConfigDTO",
+                    "description": "远程请求配置(remoteRequestConfig)：URL、方法、参数与响应解析"
+                }
+            },
+            "required": [
+                "remoteRequestConfig"
+            ]
+        },
+        "FieldPermissionDTO": {
+            "type": "object",
+            "description": "字段权限项(FieldPermissionDTO)：绑定 fieldId(queId) 与 fieldAuth。设计器三种状态：可编辑(edit)、隐藏(hide)、仅可见(readonly)。",
+            "properties": {
+                "fieldId": {
+                    "type": "integer",
+                    "description": "表单字段 id(fieldId/queId)，须为当前应用 questionIndex 中存在的字段；与 qingflow CLI fields 的 que_id 一致。"
+                },
+                "fieldAuth": {
+                    "type": "string",
+                    "description": "字段权限级别(fieldAuth)。edit=可编辑(设计器可编辑,queAuth=1)；hide=隐藏(queAuth=2)；readonly=仅可见(queAuth=3,填写/审批节点缺省值)。",
+                    "comment": "edit | hide | readonly",
+                    "enum": [
+                        "edit",
+                        "hide",
+                        "readonly"
+                    ]
+                },
+                "addRow": {
+                    "type": "boolean",
+                    "description": "表格字段：是否允许新增行(addRow)，非表格字段忽略"
+                },
+                "deleteRow": {
+                    "type": "boolean",
+                    "description": "表格字段：是否允许删除行(deleteRow)，非表格字段忽略"
+                },
+                "editRow": {
+                    "type": "boolean",
+                    "description": "表格字段：是否允许编辑行(editRow)，非表格字段忽略"
+                },
+                "beingFold": {
+                    "type": "boolean",
+                    "description": "是否在节点表单中折叠显示该字段(beingFold)"
+                }
+            },
+            "required": [
+                "fieldId",
+                "fieldAuth"
+            ],
+            "x-constraints": [
+                {
+                    "description": "缺省补齐(Spec→Legacy)：可只写需特殊处理的字段；Apply 时按应用字段全集(questionIndex)展开。applicant 未列出→edit；filling/approval/cc 未列出→readonly(仅可见)。已显式列出的 fieldId(含 hide)不被覆盖。表格字段可配 addRow/deleteRow/editRow。"
+                }
+            ]
+        },
+        "CCAttrsDTO": {
+            "type": "object",
+            "description": "【WHAT】抄送节点(cc)：通知成员查看流程与数据，通常不阻塞主路径、不产生必须处理的审批待办。【WHY】让相关人知情（财务抄送、管理层知会）；可限制可见字段与是否查看审批记录。【HOW】配置 receivers、auditRecordVisible、fieldPermissions；未列出字段默认 readonly。",
+            "properties": {
+                "receivers": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/MemberRefDTO"
+                    },
+                    "description": "抄送对象(receivers)：用户/部门/角色，至少一人"
+                },
+                "auditRecordVisible": {
+                    "type": "boolean",
+                    "description": "抄送人是否可查看审批记录(auditRecordVisible)"
+                },
+                "fieldPermissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/FieldPermissionDTO"
+                    },
+                    "description": "字段权限(fieldPermissions)【抄送节点】 WHAT：抄送人查看流程数据时可见哪些字段。 WHY：知会场景通常只读，避免泄露或误改敏感字段。 HOW：未列出字段默认 readonly；隐藏用 hide。 缺省补齐(Spec→Legacy)：可只写需特殊处理的字段；Apply 时按应用字段全集(questionIndex)展开。applicant 未列出→edit；filling/approval/cc 未列出→readonly(仅可见)。已显式列出的 fieldId(含 hide)不被覆盖。表格字段可配 addRow/deleteRow/editRow。"
+                }
+            },
+            "required": [
+                "receivers"
+            ]
+        },
+        "AutomationAIOutputFieldDTO": {
+            "type": "object",
+            "description": "AI output field mapping",
+            "properties": {
+                "fieldId": {
+                    "type": "integer",
+                    "description": "Output field id"
+                },
+                "fieldDesc": {
+                    "type": "string",
+                    "description": "Output field description"
+                }
+            },
+            "required": [
+                "fieldId"
+            ]
+        },
+        "AutomationAIConfigDTO": {
+            "type": "object",
+            "description": "AI 配置(aiConfig) 按 subType 必填字段(Legacy aiNodeSettingCheck 对齐)：A) ai_text_summary|ai_content_extraction|ai_content_classification|ai_image_recognition|ai_document_parsing → inputFieldIds + outputFields；B) ai_content_generation|ai_image_generation → promptWords + outputFields；C) ai_machine_translation → inputFieldIds + outputFields + language。 inputFieldIds/outputFields.fieldId 须为当前流程(源应用) questionIndex 中的 queId。",
+            "properties": {
+                "example": {
+                    "type": "string",
+                    "description": "参考示例(example)，可选，辅助模型理解场景"
+                },
+                "promptWords": {
+                    "type": "string",
+                    "description": "提示词(promptWords)。B 组 subType(ai_content_generation|ai_image_generation)必填；描述 AI 要完成的任务"
+                },
+                "language": {
+                    "type": "string",
+                    "description": "目标语言(language)。C 组 subType(ai_machine_translation)必填；如 en、ja、zh-CN"
+                },
+                "inputFieldIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "输入字段 id 列表(inputFieldIds)。A/C 组 subType 必填；须为当前流程(源应用)表单字段 queId",
+                    "comment": "示例:[343283769,343283777]"
+                },
+                "outputFields": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/AutomationAIOutputFieldDTO"
+                    },
+                    "description": "输出字段映射(outputFields)：AI 结果写入哪些字段；所有 AI subType 必填",
+                    "comment": "示例:[{\"fieldId\":343283775,\"fieldDesc\":\"摘要\"}]"
+                },
+                "customButtonText": {
+                    "type": "string",
+                    "description": "自定义按钮文案(customButtonText)，仅 spec 快照，不落 legacy 表"
+                },
+                "customButtonEnabled": {
+                    "type": "boolean",
+                    "description": "是否启用自定义按钮(customButtonEnabled)，仅 spec 快照，不落 legacy 表"
+                }
+            },
+            "required": [
+                "inputFieldIds",
+                "outputFields"
+            ]
+        },
+        "AutomationAIAttrsDTO": {
+            "type": "object",
+            "description": "【WHAT】Q-Robot AI 节点(automation + ai_* subType)：流程到达后调用 AI 能力处理表单字段并写回结果，无人工待办。【WHY】文本总结、内容生成/提取/分类、图像识别/生成、文档解析、机器翻译等自动化智能处理。【HOW】type=automation，attrs.subType 选具体 AI 能力(见 AUTOMATION_AI_CONFIG)；attrs.aiConfig 配置 inputFieldIds/outputFields/promptWords/language；subType 与 legacy dealType 11~18 一一对应；`ai` 等价于 `ai_text_summary`。【NOT】禁止 fieldPermissions；customButtonText 仅 preservedAttrsJson 快照，不落 legacy 表。",
+            "properties": {
+                "aiConfig": {
+                    "$ref": "#/$defs/AutomationAIConfigDTO",
+                    "description": "AI 配置(aiConfig) 按 subType 必填字段(Legacy aiNodeSettingCheck 对齐)：A) ai_text_summary|ai_content_extraction|ai_content_classification|ai_image_recognition|ai_document_parsing → inputFieldIds + outputFields；B) ai_content_generation|ai_image_generation → promptWords + outputFields；C) ai_machine_translation → inputFieldIds + outputFields + language。 inputFieldIds/outputFields.fieldId 须为当前流程(源应用) questionIndex 中的 queId。"
+                }
+            },
+            "required": [
+                "aiConfig"
+            ],
+            "x-constraints": [
+                {
+                    "if": "properties.subType.const='ai_machine_translation'",
+                    "then": "properties.aiConfig.required=['inputFieldIds','outputFields','language']",
+                    "description": "机器翻译须配置源字段、输出字段与目标 language"
+                }
+            ]
+        },
+        "FillingAttrsDTO": {
+            "type": "object",
+            "description": "【WHAT】填写节点(filling)：指派处理人补充或修改表单中的少量字段，完成后流转下游；会产生待办(任务中心)。【WHY】当信息需由非申请人（销售助理、主管、财务等）补录时使用；区别于审批节点不做通过/驳回决策。【HOW】配置 responsible(至少一人)、auditFeedback、timeoutConfig、fieldPermissions；典型场景：补全客户资料、上传附件、核对金额；fieldPermissions 须显式列出需 edit 的 fieldId，否则未列出字段在 Apply 后均为 readonly(设计器「仅可见」)。",
+            "properties": {
+                "responsible": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/MemberRefDTO"
+                    },
+                    "description": "填写处理人(responsible)：用户/部门/角色引用，至少一人"
+                },
+                "auditFeedback": {
+                    "type": "boolean",
+                    "description": "是否开启处理反馈(auditFeedback)"
+                },
+                "timeoutConfig": {
+                    "$ref": "#/$defs/TimeoutConfigDTO",
+                    "description": "超时策略(timeoutConfig)：超时提醒、自动处理等"
+                },
+                "fieldPermissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/FieldPermissionDTO"
+                    },
+                    "description": "字段权限(fieldPermissions)【填写节点】 WHAT：控制填写人打开待办时能改哪些字段；其余字段仅可见或隐藏。 WHY：填写节点通常只补少量字段，默认其余只读以防误改。 HOW：须为每个需要可编辑的 fieldId 写 fieldAuth=edit；只写 1～2 项会导致其余全部仅可见。 缺省补齐(Spec→Legacy)：可只写需特殊处理的字段；Apply 时按应用字段全集(questionIndex)展开。applicant 未列出→edit；filling/approval/cc 未列出→readonly(仅可见)。已显式列出的 fieldId(含 hide)不被覆盖。表格字段可配 addRow/deleteRow/editRow。 示例：[{fieldId:343283775,fieldAuth:\"edit\"},{fieldId:343283769,fieldAuth:\"edit\"}]",
+                    "comment": "[{\"fieldId\":343283775,\"fieldAuth\":\"edit\"},{\"fieldId\":343283769,\"fieldAuth\":\"edit\"}]"
+                }
+            },
+            "required": [
+                "responsible"
+            ],
+            "x-capability-boundaries": [
+                {
+                    "capability": "human_task_filling",
+                    "description": "Assignee supplements few form fields; creates task-center todo",
+                    "level": "core",
+                    "constraints": [
+                        "requires responsible (>=1)",
+                        "fieldPermissions: omitted fields default readonly (visible only)",
+                        "explicit edit required per fieldId that must be editable"
+                    ]
+                }
+            ]
+        },
+        "WebhookParamDTO": {
+            "type": "object",
+            "properties": {}
+        },
+        "WebhookEndpointDTO": {
+            "type": "object",
+            "properties": {}
+        },
+        "WebhookRequestDTO": {
+            "type": "object",
+            "properties": {}
+        },
+        "WebhookUpdatePolicyDTO": {
+            "type": "object",
+            "description": "Webhook update policy",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable update policy"
+                },
+                "strategy": {
+                    "type": "string",
+                    "description": "Update strategy",
+                    "enum": [
+                        "insertOnly",
+                        "updateOnly",
+                        "upsert"
+                    ]
+                },
+                "maxUpdateRows": {
+                    "type": "integer",
+                    "description": "Maximum rows to update"
+                },
+                "matchGroups": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "description": "OR-of-AND matcher groups"
+                }
+            },
+            "required": [
+                "enabled"
+            ]
+        },
+        "WebhookResponseDTO": {
+            "type": "object",
+            "properties": {}
+        },
+        "ApplicantWebhookConfigDTO": {
+            "type": "object",
+            "description": "Applicant webhook config",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "description": "Webhook config id"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Webhook config name",
+                    "minLength": 1
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Whether webhook is enabled"
+                },
+                "authToken": {
+                    "type": "string",
+                    "description": "Auth token"
+                },
+                "endpoint": {
+                    "$ref": "#/$defs/WebhookEndpointDTO",
+                    "description": "Webhook endpoint"
+                },
+                "request": {
+                    "$ref": "#/$defs/WebhookRequestDTO",
+                    "description": "Request payload metadata"
+                },
+                "parseRules": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/WebhookParseRuleDTO"
+                    },
+                    "description": "Parse rules"
+                },
+                "updatePolicy": {
+                    "$ref": "#/$defs/WebhookUpdatePolicyDTO",
+                    "description": "Update policy"
+                },
+                "response": {
+                    "$ref": "#/$defs/WebhookResponseDTO",
+                    "description": "Custom response config"
+                }
+            },
+            "required": [
+                "name",
+                "endpoint",
+                "parseRules",
+                "updatePolicy"
+            ]
+        },
+        "ApplicantAttrsDTO": {
+            "type": "object",
+            "description": "【WHAT】申请人节点(applicant)：工作流唯一入口，流程图起点；申请人填写表单并提交后进入下游。【WHY】承载「谁发起、填哪些字段、如何提交」；对应 legacy dealType=申请、产生首条流程实例。【HOW】每个工作流必须有且仅有一个 applicant；配置 submitText/commentStatus/fieldPermissions/webhook；fieldPermissions 控制发起人可见/可编辑字段；未列出字段 Apply 时默认 edit。",
+            "properties": {
+                "commentStatus": {
+                    "type": "boolean",
+                    "description": "是否允许发起人填写备注(commentStatus)"
+                },
+                "submitText": {
+                    "type": "string",
+                    "description": "自定义提交按钮文案(submitText)"
+                },
+                "fieldPermissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/FieldPermissionDTO"
+                    },
+                    "description": "字段权限(fieldPermissions)【申请人节点】 WHAT：控制发起人在提交前对各字段的可编辑/仅可见/隐藏。 WHY：限制申请人只能改业务字段、系统字段只读或隐藏。 HOW：列出例外项；未列出的应用字段 Apply 时自动补齐为 edit。 缺省补齐(Spec→Legacy)：可只写需特殊处理的字段；Apply 时按应用字段全集(questionIndex)展开。applicant 未列出→edit；filling/approval/cc 未列出→readonly(仅可见)。已显式列出的 fieldId(含 hide)不被覆盖。表格字段可配 addRow/deleteRow/editRow。",
+                    "comment": "[{\"fieldId\":343283769,\"fieldAuth\":\"edit\"},{\"fieldId\":343283777,\"fieldAuth\":\"readonly\"}]"
+                },
+                "webhook": {
+                    "$ref": "#/$defs/ApplicantWebhookConfigDTO",
+                    "description": "入站 Webhook(webhook)：外部系统触发发起时的解析与更新策略"
+                }
+            },
+            "x-capability-boundaries": [
+                {
+                    "capability": "human_task_applicant",
+                    "description": "Workflow start node; exactly one per spec",
+                    "level": "core",
+                    "constraints": [
+                        "required in every workflow",
+                        "supports fieldPermissions with default-expand edit",
+                        "produces apply/submit, not approval todo"
+                    ]
+                }
+            ]
+        },
+        "AutomationAddAttrsDTO": {
+            "type": "object",
+            "description": "Q-Robot 新增(subType=add)：向目标 appKey 插入数据。【Q-Robot 三层筛选】① tableFilterRules=编辑器「表格筛选条件」，筛源应用(当前流程)子表行，legacy tableFilterCondition；② targetFilterRules=编辑器「更新哪些数据」，筛目标应用(appKey)主记录/目标子表行，legacy qrobotQueFilterFormula/filterCondition；③ fieldMappings[].tableRowOperations=「表格更新规则」，写目标子表行内容。目标子表行定位写在 targetFilterRules，不要写在 tableFilterRules。",
+            "properties": {
+                "appKey": {
+                    "type": "string",
+                    "description": "目标应用 appKey，数据写入该应用",
+                    "minLength": 1,
+                    "x-resource-ref": {
+                        "resourceType": "application",
+                        "guidance": "Select an application to operate on"
+                    }
+                },
+                "fieldMappings": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/QRobotRelationRuleDTO"
+                    },
+                    "description": "字段映射(fieldMappings)：目标字段与来源值/字段引用的对应关系"
+                },
+                "tableFilterRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/AutomationTableFilterRuleDTO"
+                    },
+                    "description": "源应用表格筛选(tableFilterRules)：编辑器「表格筛选条件」。在映射写入目标应用前，限定当前流程(源应用)子表参与操作的行。tableFieldId 为源子表 fieldId；filterRules 内 fieldId 须为该源子表下的子字段，仅 matchType=literal。Legacy tableFilterCondition。与 targetFilterRules 无关。"
+                }
+            },
+            "required": [
+                "appKey",
+                "fieldMappings"
+            ]
+        },
+        "AutomationSendSmsAttrsDTO": {
+            "type": "object",
+            "description": "Q-Robot 发短信(subType=send_sms)：Legacy 占位节点，模板与收件人由设计器管理，Spec Apply 不可变更配置",
+            "properties": {
+                "managedByLegacy": {
+                    "type": "boolean",
+                    "description": "占位标记(managedByLegacy)：true 表示短信配置由 legacy/设计器管理"
+                },
+                "smsTemplateKey": {
+                    "type": "string",
+                    "description": "短信模板 key(smsTemplateKey)，Legacy→Spec GET 只读展示，Apply 不可变更",
+                    "minLength": 1,
+                    "x-resource-ref": {
+                        "resourceType": "smsTemplate",
+                        "guidance": "Select an SMS template"
+                    }
+                },
+                "smsTemplateName": {
+                    "type": "string",
+                    "description": "短信模板显示名(smsTemplateName)，Legacy→Spec GET 只读展示"
+                }
+            },
+            "required": [
+                "managedByLegacy"
+            ]
+        },
+        "GradedAuditConfigDTO": {
+            "type": "object",
+            "description": "逐级审批配置(gradedAuditConfig)：auditUserType=graded 时必填，含审批起点与终点规则",
+            "properties": {
+                "gradedType": {
+                    "type": "string",
+                    "description": "逐级类型(gradedType)：dept=部门层级；report=汇报层级",
+                    "enum": [
+                        "dept",
+                        "report"
+                    ]
+                },
+                "endType": {
+                    "type": "string",
+                    "description": "终点类型(endType)：dynamicUp=连续多级主管向上；specifiedLevel=指定层级主管",
+                    "enum": [
+                        "dynamicUp",
+                        "specifiedLevel"
+                    ]
+                },
+                "dynamicEndLevelNum": {
+                    "type": "integer",
+                    "description": "动态向上层级数(dynamicEndLevelNum)，endType=dynamicUp 时使用"
+                },
+                "specifiedEndLevelNum": {
+                    "type": "integer",
+                    "description": "指定层级数(specifiedEndLevelNum)，endType=specifiedLevel 时使用"
+                },
+                "gradedApproveType": {
+                    "type": "string",
+                    "description": "同层级多人时通过模式(gradedApproveType)：and=须全部通过；or=一人通过即可",
+                    "enum": [
+                        "and",
+                        "or"
+                    ]
+                },
+                "removeDup": {
+                    "type": "boolean",
+                    "description": "层级负责人去重(removeDup)"
+                },
+                "startResponsible": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/MemberRefDTO"
+                    },
+                    "description": "审批起点(startResponsible)：逐级审批从何处开始向上，语义同 MemberRef"
+                }
+            },
+            "required": [
+                "startResponsible"
+            ]
+        },
+        "AutomationAttrsDTO": {
+            "type": "object",
+            "description": "【WHAT】自动化节点(automation/Q-Robot)：无人工待办，流程到达后后台自动执行动作（增删改他表、发邮件/短信、HTTP、AI 等）。【WHY】扩展审批流能力：同步 CRM、通知外部系统、按规则更新关联应用，减少人工重复操作。【HOW】type=automation，attrs.subType 决定 payload：add|update|ai|http_request|send_email|send_sms；禁止 fieldPermissions；配置目标 appKey、fieldMappings、filterRules 等子类型字段。",
+            "properties": {
+                "subType": {
+                    "type": "string",
+                    "description": "自动化子类型(subType)：add|update|send_email|send_sms|http_request|ai|ai_text_summary|ai_content_generation|ai_machine_translation|ai_content_extraction|ai_content_classification|ai_image_recognition|ai_image_generation|ai_document_parsing；决定 payload 结构"
+                }
+            },
+            "required": [
+                "subType"
+            ],
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/AutomationUpdateAttrsDTO"
+                },
+                {
+                    "$ref": "#/$defs/AutomationSendEmailAttrsDTO"
+                },
+                {
+                    "$ref": "#/$defs/AutomationHttpRequestAttrsDTO"
+                },
+                {
+                    "$ref": "#/$defs/AutomationAIAttrsDTO"
+                },
+                {
+                    "$ref": "#/$defs/AutomationAddAttrsDTO"
+                },
+                {
+                    "$ref": "#/$defs/AutomationSendSmsAttrsDTO"
+                }
+            ],
+            "discriminator": {
+                "propertyName": "subType",
+                "mapping": {
+                    "update": "#/$defs/AutomationUpdateAttrsDTO",
+                    "send_email": "#/$defs/AutomationSendEmailAttrsDTO",
+                    "http_request": "#/$defs/AutomationHttpRequestAttrsDTO",
+                    "ai": "#/$defs/AutomationAIAttrsDTO",
+                    "add": "#/$defs/AutomationAddAttrsDTO",
+                    "send_sms": "#/$defs/AutomationSendSmsAttrsDTO"
+                }
+            },
+            "x-polymorphic-base": "com.qflow.backend.workflow.spec.dto.attrs.AutomationAttrsDTO",
+            "x-capability-boundaries": [
+                {
+                    "capability": "automation_qrobot",
+                    "description": "Background Q-Robot; no human todo",
+                    "level": "core",
+                    "constraints": [
+                        "no fieldPermissions",
+                        "subType selects payload: add|update|ai|http_request|send_email|send_sms"
+                    ]
+                }
+            ]
+        },
+        "CountersignConfigDTO": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "是否开启加签(enabled)：节点负责人可加签其他成员共同审批"
+                },
+                "scope": {
+                    "type": "string",
+                    "description": "加签人员范围(scope)：workspaceMember=工作区可见成员；assignMember=指定成员(成员列表暂未纳入 Spec)",
+                    "enum": [
+                        "workspaceMember",
+                        "assignMember"
+                    ]
+                }
+            }
+        },
+        "EndWorkflowConfigDTO": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "是否允许结束流程(enabled)：负责人可手动结束流程，状态变为已结束"
+                },
+                "buttonText": {
+                    "type": "string",
+                    "description": "结束流程按钮文案(buttonText)"
+                }
+            }
+        },
+        "SignConfigDTO": {
+            "type": "object",
+            "properties": {
+                "eSign": {
+                    "type": "boolean",
+                    "description": "是否启用电子签章(eSign)"
+                },
+                "handSign": {
+                    "type": "boolean",
+                    "description": "是否启用手写签名(handSign)"
+                }
+            }
+        },
+        "ButtonTextConfigDTO": {
+            "type": "object",
+            "properties": {
+                "approve": {
+                    "type": "string",
+                    "description": "通过按钮文案(approve)"
+                },
+                "reject": {
+                    "type": "string",
+                    "description": "驳回按钮文案(reject)"
+                },
+                "revert": {
+                    "type": "string",
+                    "description": "退回按钮文案(revert)"
+                },
+                "submit": {
+                    "type": "string",
+                    "description": "提交按钮文案(submit)"
+                },
+                "transfer": {
+                    "type": "string",
+                    "description": "转交按钮文案(transfer)"
+                }
+            }
+        },
+        "SwitchConfigDTO": {
+            "type": "object",
+            "properties": {
+                "rejectBtnStatus": {
+                    "type": "boolean",
+                    "description": "是否显示/启用驳回按钮(rejectBtnStatus)，对应设计器「流程拒绝」"
+                },
+                "revokeStatus": {
+                    "type": "boolean",
+                    "description": "是否允许流程撤回(revokeStatus)，对应设计器「流程撤回」"
+                },
+                "dataImportStatus": {
+                    "type": "boolean",
+                    "description": "是否允许数据导入(dataImportStatus)"
+                },
+                "submitRecalcStatus": {
+                    "type": "boolean",
+                    "description": "提交时是否重算(submitRecalcStatus)"
+                },
+                "batchOperateStatus": {
+                    "type": "boolean",
+                    "description": "是否允许批量操作(batchOperateStatus)"
+                },
+                "beingSubmitCheck": {
+                    "type": "boolean",
+                    "description": "提交时是否校验(beingSubmitCheck)"
+                }
+            }
+        },
+        "FeedbackConfigDTO": {
+            "type": "object",
+            "properties": {}
+        },
+        "ApprovalAttrsDTO": {
+            "type": "object",
+            "description": "【WHAT】审批节点(approval)：指派审批人对当前数据做通过/驳回/转交/退回；产生待办，是审批流最常见的人工节点。【WHY】用于权责确认、合规把关；支持或签/会签、逐级审批(graded)、超时自动处理、加签与字段只读查看。【HOW】配置 responsible、approveType(or|and)、auditUserType(normal|graded)、auditFeedback、commentStatus、revert、revertScope/transferScope、timeoutConfig、buttonText、switches、signConfig、countersignConfig、endWorkflowConfig、fieldPermissions；graded 时填 gradedAuditConfig.startResponsible；fieldPermissions 未列出字段默认 readonly(仅可见)。",
+            "properties": {
+                "responsible": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/MemberRefDTO"
+                    },
+                    "description": "审批人(responsible)：用户/部门/角色，至少一人"
+                },
+                "approveType": {
+                    "type": "string",
+                    "description": "审批方式(approveType)：or=或签(一人通过即可)；and=会签(须全部通过)",
+                    "enum": [
+                        "or",
+                        "and"
+                    ]
+                },
+                "auditUserType": {
+                    "type": "string",
+                    "description": "审批人类型(auditUserType)：normal=普通；graded=逐级审批",
+                    "enum": [
+                        "normal",
+                        "graded"
+                    ]
+                },
+                "revertScope": {
+                    "type": "string",
+                    "description": "退回范围(revertScope)：可退回到哪些历史节点"
+                },
+                "transferScope": {
+                    "type": "string",
+                    "description": "转交范围(transferScope)：允许转交给谁"
+                },
+                "auditFeedback": {
+                    "type": "boolean",
+                    "description": "是否开启审批意见(auditFeedback)"
+                },
+                "commentStatus": {
+                    "type": "boolean",
+                    "description": "是否开启留言(commentStatus)：负责人可留言并查看历史留言"
+                },
+                "revert": {
+                    "type": "boolean",
+                    "description": "是否允许流程回退(revert)：true 时配合 revertScope 启用退回上一节点等能力"
+                },
+                "countersignConfig": {
+                    "$ref": "#/$defs/CountersignConfigDTO",
+                    "description": "加签配置(countersignConfig)：负责人加签其他成员共同审批"
+                },
+                "endWorkflowConfig": {
+                    "$ref": "#/$defs/EndWorkflowConfigDTO",
+                    "description": "结束流程配置(endWorkflowConfig)：负责人手动结束流程"
+                },
+                "timeoutConfig": {
+                    "$ref": "#/$defs/TimeoutConfigDTO",
+                    "description": "超时配置(timeoutConfig)：超时提醒、自动通过/驳回等"
+                },
+                "gradedAuditConfig": {
+                    "$ref": "#/$defs/GradedAuditConfigDTO",
+                    "description": "逐级审批配置(gradedAuditConfig)，auditUserType=graded 时必填；startResponsible 为审批起点"
+                },
+                "signConfig": {
+                    "$ref": "#/$defs/SignConfigDTO",
+                    "description": "加签配置(signConfig)"
+                },
+                "buttonText": {
+                    "$ref": "#/$defs/ButtonTextConfigDTO",
+                    "description": "按钮文案(buttonText)：通过/驳回等按钮显示文字"
+                },
+                "switches": {
+                    "$ref": "#/$defs/SwitchConfigDTO",
+                    "description": "功能开关(switches)：如允许暂存、批量审批等"
+                },
+                "fieldPermissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/FieldPermissionDTO"
+                    },
+                    "description": "字段权限(fieldPermissions)【审批节点】 WHAT：审批人处理待办时对字段的可见/可编辑/隐藏。 WHY：审批人多数场景只读查看，少数场景允许改指定字段。 HOW：未列出字段默认 readonly；需可编辑时显式 edit。 缺省补齐(Spec→Legacy)：可只写需特殊处理的字段；Apply 时按应用字段全集(questionIndex)展开。applicant 未列出→edit；filling/approval/cc 未列出→readonly(仅可见)。已显式列出的 fieldId(含 hide)不被覆盖。表格字段可配 addRow/deleteRow/editRow。",
+                    "comment": "[{\"fieldId\":343283769,\"fieldAuth\":\"readonly\"}]"
+                },
+                "feedbackConfigs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/FeedbackConfigDTO"
+                    },
+                    "description": "反馈配置(feedbackConfigs)"
+                }
+            },
+            "required": [
+                "responsible",
+                "approveType",
+                "auditUserType"
+            ],
+            "x-capability-boundaries": [
+                {
+                    "capability": "human_task_approval",
+                    "description": "Approver pass/reject/transfer/revert; creates task-center todo",
+                    "level": "core",
+                    "constraints": [
+                        "requires responsible unless auditUserType=graded (use gradedAuditConfig)",
+                        "approveType or|and; auditUserType normal|graded",
+                        "fieldPermissions: omitted fields default readonly"
+                    ]
+                }
+            ]
+        },
+        "GatewayAttrsDTO": {
+            "type": "object",
+            "description": "【WHAT】网关节点(gateway)：在 edges.edges[] 中作为多条边的共同端点，表达分叉或汇合。【WHY】分支逻辑挂在出边 condition 上，不再使用 branch/condition 节点。【HOW】mode=parallel 作 fork(出边≥2)；mode=join 作汇合(入边≥2、出边≤1)。详见 patterns.md#P03、#P02。",
+            "properties": {
+                "mode": {
+                    "type": "string",
+                    "description": "网关模式(mode)。parallel：fork，edges 中 ≥2 条出边 from=本节点 id(P03a 条件选路 / P03b 多路同时)。join：汇合，≥2 入边 to=本节点 id、出边≤1(P02)。省略→parallel。",
+                    "enum": [
+                        "parallel",
+                        "join"
+                    ]
+                }
+            },
+            "x-gateway-constraints": [
+                "mode omitted or parallel: node must have >= 2 outgoing edges in spec.edges.edges",
+                "mode=join: node must have >= 2 incoming and <= 1 outgoing edges",
+                "parallel fork allows multiple default condition edges (no single-default limit)"
+            ]
+        },
+        "WorkflowSpecNodes": {
+            "type": "object",
+            "description": "轻流工作流核心结构：nodes 为节点列表，edges.edges 为显式 from/to 边列表",
+            "properties": {
+                "nodes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/$defs/WorkflowNodeDTO"
+                    },
+                    "description": "工作流节点列表。type 决定业务角色：applicant(发起)、filling(填写)、approval(审批)、gateway(并行 fork/join)、cc(抄送)、automation(Q-Robot)"
+                },
+                "edges": {
+                    "$ref": "#/$defs/WorkflowEdgesDTO",
+                    "description": "工作流边容器(edges)：edges 为显式边列表"
+                }
+            },
+            "required": [
+                "nodes",
+                "edges"
+            ]
+        },
+        "LiteralAssignmentValueDTO": {
+            "type": "object",
+            "description": "Q-Robot 结构化字面量赋值：matchType=literal 且目标字段为日期/选项/成员等复杂类型时使用；简单字段可直接用 string/number 或 {\"value\":\"...\"}",
+            "properties": {
+                "valueType": {
+                    "type": "string",
+                    "description": "字面量类型(valueType)：date/option/member 等用 value；options/members 用 values 数组；date_range 用 start+end",
+                    "enum": [
+                        "date",
+                        "date_range",
+                        "option",
+                        "options",
+                        "member",
+                        "members",
+                        "reference",
+                        "json"
+                    ]
+                },
+                "value": {
+                    "type": "string",
+                    "description": "单值 payload(value)：日期、选项 id、成员 id、JSON 字符串等"
+                },
+                "values": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "多值 payload(values)：多选选项、多成员等"
+                },
+                "start": {
+                    "type": "string",
+                    "description": "日期区间起始(start)，valueType=date_range 时必填"
+                },
+                "end": {
+                    "type": "string",
+                    "description": "日期区间结束(end)，valueType=date_range 时必填"
+                }
+            },
+            "required": [
+                "valueType"
+            ]
+        }
+    }
+}

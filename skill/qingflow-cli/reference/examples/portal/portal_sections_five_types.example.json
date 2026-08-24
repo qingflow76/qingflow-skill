@@ -1,0 +1,126 @@
+[
+  {
+    "title": "门户说明",
+    "source_type": "text",
+    "position": {
+      "pc": {
+        "x": 0,
+        "y": 0,
+        "cols": 24,
+        "rows": 2
+      },
+      "mobile": {
+        "x": 0,
+        "y": 0,
+        "cols": 6,
+        "rows": 2
+      }
+    },
+    "text": "建议将门户设计成工作台：上方放入口，中部放指标，下方放待处理和异常列表。此文件仅演示 grid / text / link / view / chart 的稳定写法。"
+  },
+  {
+    "title": "业务入口",
+    "source_type": "grid",
+    "position": {
+      "pc": {
+        "x": 0,
+        "y": 2,
+        "cols": 24,
+        "rows": 4
+      },
+      "mobile": {
+        "x": 0,
+        "y": 2,
+        "cols": 6,
+        "rows": 4
+      }
+    },
+    "config": {
+      "gridTitle": "业务入口",
+      "beingShowTitle": true,
+      "items": [
+        {
+          "type": 1,
+          "jumpMode": 1,
+          "linkAppKey": "APP_KEY_MAIN",
+          "linkFormType": 1,
+          "title": "核心业务",
+          "customTitle": "核心业务",
+          "beingCustomTitle": false
+        },
+        {
+          "type": 1,
+          "jumpMode": 1,
+          "linkAppKey": "APP_KEY_TASK",
+          "linkFormType": 1,
+          "title": "待处理业务",
+          "customTitle": "待处理业务",
+          "beingCustomTitle": false
+        }
+      ]
+    }
+  },
+  {
+    "title": "核心指标",
+    "source_type": "chart",
+    "position": {
+      "pc": {
+        "x": 0,
+        "y": 6,
+        "cols": 24,
+        "rows": 6
+      },
+      "mobile": {
+        "x": 0,
+        "y": 6,
+        "cols": 6,
+        "rows": 6
+      }
+    },
+    "chart": {
+      "app_key": "ead8ims5i401",
+      "chart_id": "mcp_fb104267c5c249ca"
+    }
+  },
+  {
+    "title": "待处理列表",
+    "source_type": "view",
+    "position": {
+      "pc": {
+        "x": 0,
+        "y": 12,
+        "cols": 12,
+        "rows": 8
+      },
+      "mobile": {
+        "x": 0,
+        "y": 12,
+        "cols": 6,
+        "rows": 8
+      }
+    },
+    "view_ref": {
+      "app_key": "ead8ims5i401",
+      "view_key": "ead8kbf1i402"
+    }
+  },
+  {
+    "title": "帮助文档",
+    "source_type": "link",
+    "position": {
+      "pc": {
+        "x": 12,
+        "y": 12,
+        "cols": 12,
+        "rows": 8
+      },
+      "mobile": {
+        "x": 0,
+        "y": 20,
+        "cols": 6,
+        "rows": 2
+      }
+    },
+    "url": "https://example.com"
+  }
+]

@@ -1,0 +1,10 @@
+identity: qingflow_cli
+type: skill
+description: 「使用 qingflow CLI 的任何命令或自动化脚本前必须先调用本 Skill」。Qingflow CLI 包以本 Skill 作为 CLI 主入口；record/app-builder/task/workflow 等相关说明按场景组织在 reference 子目录。涵盖安装、执行上下文失败恢复、task/record/import/builder 查询落盘规则、普通成员读数速通、record list 模糊定位、record get 详情上下文、record access 分析取数、record insert/update/delete/import、任务上下文 SOP。Builder reference 按智能体任务路径组织：单应用、完整系统/应用包、AppForm、视图、报表/QingBI、门户、关联资源、流程、发布校验；表单字段、布局和应用设置统一使用 versioned AppForm（CLI 为 builder app-form schema/get/validate/apply），不再使用已移除的 schema/layout apply；按钮随视图 action_buttons 声明；更新动作并入对应资源文档，批量读、批量写、局部改作为资源内写法变体；默认不把登录或工作区校验作为业务前置
+tags:
+  - cli
+  - qingflow
+  - task-management
+  - data-analysis
+  - security
+  - validated

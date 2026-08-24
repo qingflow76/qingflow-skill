@@ -1,0 +1,50 @@
+{
+  "upsert_resources": [
+    {
+      "client_key": "customer_orders",
+      "graph_type": "view",
+      "target_app_key": "ORDER_APP_KEY",
+      "view_key": "ORDER_VIEW_KEY",
+      "title": "当前客户订单",
+      "match_mappings": [
+        {
+          "target_field": "关联客户",
+          "operator": "eq",
+          "source_field": "数据ID"
+        },
+        {
+          "target_field": "订单状态",
+          "operator": "in",
+          "values": ["执行中", "待回款"]
+        }
+      ]
+    },
+    {
+      "client_key": "customer_payment_chart",
+      "graph_type": "chart",
+      "target_app_key": "PAYMENT_APP_KEY",
+      "chart_id": "PAYMENT_CHART_ID",
+      "title": "当前客户回款统计",
+      "match_mappings": [
+        {
+          "target_field": "关联客户",
+          "operator": "eq",
+          "source_field": "数据ID"
+        },
+        {
+          "target_field": "回款状态",
+          "operator": "neq",
+          "value": "作废"
+        }
+      ]
+    }
+  ],
+  "view_configs": [
+    {
+      "view_key": "CUSTOMER_DETAIL_VIEW_KEY",
+      "mode": "merge",
+      "associated_item_refs": ["customer_orders", "customer_payment_chart"],
+      "limit_type": "custom"
+    }
+  ]
+}

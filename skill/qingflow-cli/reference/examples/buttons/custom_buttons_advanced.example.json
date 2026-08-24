@@ -1,0 +1,56 @@
+{
+  "upsert_buttons": [
+    {
+      "client_key": "open_sop",
+      "button_text": "打开SOP",
+      "style_preset": "text_blue",
+      "trigger_action": "link",
+      "trigger_link_url": "https://example.com/sop"
+    },
+    {
+      "client_key": "create_acceptance",
+      "button_text": "创建验收单",
+      "style_preset": "primary_blue",
+      "trigger_action": "addData",
+      "trigger_add_data_config": {
+        "target_app_key": "ACCEPTANCE_APP_KEY",
+        "field_mappings": [
+          {
+            "source_field": "数据ID",
+            "target_field": "关联工单"
+          }
+        ],
+        "default_values": {
+          "验收状态": "待验收"
+        }
+      }
+    }
+  ],
+  "view_configs": [
+    {
+      "view_key": "WORK_ORDER_VIEW_KEY",
+      "mode": "merge",
+      "buttons": [
+        {
+          "button_ref": "open_sop",
+          "placement": "header",
+          "primary": false
+        },
+        {
+          "button_ref": "create_acceptance",
+          "placement": "detail",
+          "primary": true,
+          "button_limit": [
+            [
+              {
+                "field_name": "工单状态",
+                "operator": "eq",
+                "value": "已完工"
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

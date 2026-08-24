@@ -1,0 +1,95 @@
+[
+  {
+    "section": "基础信息",
+    "rows": [
+      [
+        {
+          "name": "工单编号",
+          "type": "text",
+          "data_title": true,
+          "required": true,
+          "description": "唯一业务编号"
+        },
+        {
+          "name": "工单名称",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "工单状态",
+          "type": "select",
+          "required": true,
+          "options": ["待处理", "处理中", "已完成", "已关闭"]
+        }
+      ],
+      [
+        {
+          "name": "负责人",
+          "type": "member"
+        },
+        {
+          "name": "负责部门",
+          "type": "department",
+          "department_scope": {"mode": "all"}
+        },
+        {
+          "name": "计划完成日期",
+          "type": "date"
+        }
+      ]
+    ]
+  },
+  {
+    "section": "业务信息",
+    "rows": [
+      [
+        {
+          "name": "计划数量",
+          "type": "number"
+        },
+        {
+          "name": "预算金额",
+          "type": "amount"
+        },
+        {
+          "name": "是否加急",
+          "type": "boolean"
+        }
+      ],
+      [
+        {
+          "name": "业务标签",
+          "type": "multi_select",
+          "options": ["重点", "风险", "跨部门", "需复核"]
+        },
+        {
+          "name": "附件资料",
+          "type": "attachment",
+          "data_cover": true
+        }
+      ],
+      [
+        {
+          "name": "处理说明",
+          "type": "multiline"
+        }
+      ]
+    ]
+  },
+  {
+    "section": "明细信息",
+    "rows": [
+      [
+        {
+          "name": "处理明细",
+          "type": "subtable",
+          "subfields": [
+            {"name": "明细事项", "type": "text"},
+            {"name": "明细数量", "type": "number"},
+            {"name": "明细备注", "type": "multiline"}
+          ]
+        }
+      ]
+    ]
+  }
+]

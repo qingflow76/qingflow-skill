@@ -1,0 +1,166 @@
+{
+  "package_id": 123456,
+  "apps": [
+    {
+      "client_key": "customer",
+      "app_name": "客户",
+      "icon": "view-grid",
+      "color": "blue",
+      "form": [
+        {
+          "section": "客户基础信息",
+          "rows": [
+            [
+              {
+                "name": "客户编号",
+                "type": "text",
+                "data_title": true,
+                "required": true
+              },
+              {
+                "name": "客户名称",
+                "type": "text",
+                "required": true
+              },
+              {
+                "name": "客户状态",
+                "type": "select",
+                "options": ["潜在", "合作中", "暂停", "终止"]
+              }
+            ],
+            [
+              {
+                "name": "客户负责人",
+                "type": "member"
+              },
+              {
+                "name": "所属部门",
+                "type": "department"
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "client_key": "order",
+      "app_name": "销售订单",
+      "icon": "inbox",
+      "color": "emerald",
+      "form": [
+        {
+          "section": "订单基础信息",
+          "rows": [
+            [
+              {
+                "name": "订单编号",
+                "type": "text",
+                "data_title": true,
+                "required": true
+              },
+              {
+                "name": "关联客户",
+                "type": "relation",
+                "target_app_ref": "customer",
+                "relation_mode": "single",
+                "display_field": {
+                  "name": "客户编号"
+                },
+                "visible_fields": [
+                  {
+                    "name": "客户名称"
+                  },
+                  {
+                    "name": "客户状态"
+                  }
+                ]
+              },
+              {
+                "name": "订单状态",
+                "type": "select",
+                "options": ["草稿", "执行中", "已完成", "已取消"]
+              }
+            ],
+            [
+              {
+                "name": "订单金额",
+                "type": "amount"
+              },
+              {
+                "name": "签约日期",
+                "type": "date"
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "client_key": "payment",
+      "app_name": "回款记录",
+      "icon": "share",
+      "color": "azure",
+      "form": [
+        {
+          "section": "回款基础信息",
+          "rows": [
+            [
+              {
+                "name": "回款编号",
+                "type": "text",
+                "data_title": true,
+                "required": true
+              },
+              {
+                "name": "关联订单",
+                "type": "relation",
+                "target_app_ref": "order",
+                "relation_mode": "single",
+                "display_field": {
+                  "name": "订单编号"
+                },
+                "visible_fields": [
+                  {
+                    "name": "订单金额"
+                  },
+                  {
+                    "name": "订单状态"
+                  }
+                ]
+              },
+              {
+                "name": "关联客户",
+                "type": "relation",
+                "target_app_ref": "customer",
+                "relation_mode": "single",
+                "display_field": {
+                  "name": "客户编号"
+                },
+                "visible_fields": [
+                  {
+                    "name": "客户名称"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "name": "回款金额",
+                "type": "amount"
+              },
+              {
+                "name": "回款日期",
+                "type": "date"
+              },
+              {
+                "name": "回款状态",
+                "type": "select",
+                "options": ["待确认", "已确认", "异常"]
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

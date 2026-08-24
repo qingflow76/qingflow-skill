@@ -1,0 +1,178 @@
+[
+  {
+    "title": "业务入口",
+    "source_type": "grid",
+    "position": {
+      "pc": {"x": 0, "y": 0, "cols": 24, "rows": 4},
+      "mobile": {"x": 0, "y": 0, "cols": 6, "rows": 4}
+    },
+    "config": {
+      "gridTitle": "业务入口",
+      "beingShowTitle": true,
+      "items": [
+        {
+          "type": 1,
+          "jumpMode": 1,
+          "linkAppKey": "APP_KEY_DEVICE",
+          "linkFormType": 1,
+          "title": "设备台账",
+          "customTitle": "设备台账",
+          "beingCustomTitle": false
+        },
+        {
+          "type": 1,
+          "jumpMode": 1,
+          "linkAppKey": "APP_KEY_REPAIR",
+          "linkFormType": 1,
+          "title": "故障报修",
+          "customTitle": "故障报修",
+          "beingCustomTitle": false
+        },
+        {
+          "type": 1,
+          "jumpMode": 1,
+          "linkAppKey": "APP_KEY_MAINTENANCE",
+          "linkFormType": 1,
+          "title": "保养管理",
+          "customTitle": "保养管理",
+          "beingCustomTitle": false
+        }
+      ]
+    }
+  },
+  {
+    "title": "设备总数",
+    "source_type": "chart",
+    "role": "metric",
+    "position": {
+      "pc": {"x": 0, "y": 4, "cols": 6, "rows": 5},
+      "mobile": {"x": 0, "y": 4, "cols": 6, "rows": 5}
+    },
+    "chart": {"app_key": "APP_KEY_DEVICE", "name": "设备总数", "chart_type": "target", "metric": "count(*)"}
+  },
+  {
+    "title": "正常设备",
+    "source_type": "chart",
+    "role": "metric",
+    "position": {
+      "pc": {"x": 6, "y": 4, "cols": 6, "rows": 5},
+      "mobile": {"x": 0, "y": 9, "cols": 6, "rows": 5}
+    },
+    "chart": {
+      "app_key": "APP_KEY_DEVICE",
+      "name": "正常设备",
+      "chart_type": "target",
+      "metric": "count(*)",
+      "filters": [{"field_name": "使用状态", "operator": "eq", "value": "正常"}]
+    }
+  },
+  {
+    "title": "维修中设备",
+    "source_type": "chart",
+    "role": "metric",
+    "position": {
+      "pc": {"x": 12, "y": 4, "cols": 6, "rows": 5},
+      "mobile": {"x": 0, "y": 14, "cols": 6, "rows": 5}
+    },
+    "chart": {
+      "app_key": "APP_KEY_DEVICE",
+      "name": "维修中设备",
+      "chart_type": "target",
+      "metric": "count(*)",
+      "filters": [{"field_name": "使用状态", "operator": "eq", "value": "维修中"}]
+    }
+  },
+  {
+    "title": "本月报修",
+    "source_type": "chart",
+    "role": "metric",
+    "position": {
+      "pc": {"x": 18, "y": 4, "cols": 6, "rows": 5},
+      "mobile": {"x": 0, "y": 19, "cols": 6, "rows": 5}
+    },
+    "chart": {
+      "app_key": "APP_KEY_REPAIR",
+      "name": "本月报修",
+      "chart_type": "target",
+      "metric": "count(*)",
+      "filters": [
+        {"field_name": "报修日期", "operator": "gte", "value": "2026-07-01"},
+        {"field_name": "报修日期", "operator": "lte", "value": "2026-07-31"}
+      ]
+    }
+  },
+  {
+    "title": "设备状态分布",
+    "source_type": "chart",
+    "position": {
+      "pc": {"x": 0, "y": 9, "cols": 8, "rows": 7},
+      "mobile": {"x": 0, "y": 24, "cols": 6, "rows": 7}
+    },
+    "chart": {
+      "app_key": "APP_KEY_DEVICE",
+      "name": "设备状态分布",
+      "chart_type": "ring",
+      "metric": "count(*)",
+      "group_by": ["使用状态"],
+      "filters": [
+        {"field_name": "使用状态", "operator": "not_empty"}
+      ]
+    }
+  },
+  {
+    "title": "故障类型分布",
+    "source_type": "chart",
+    "position": {
+      "pc": {"x": 8, "y": 9, "cols": 8, "rows": 7},
+      "mobile": {"x": 0, "y": 31, "cols": 6, "rows": 7}
+    },
+    "chart": {
+      "app_key": "APP_KEY_REPAIR",
+      "name": "故障类型分布",
+      "chart_type": "columnar",
+      "metric": "count(*)",
+      "group_by": ["故障类型"],
+      "filters": [
+        {"field_name": "故障类型", "operator": "in", "values": ["机械故障", "电气故障", "软件故障"]},
+        {"field_name": "处理状态", "operator": "neq", "value": "已作废"}
+      ]
+    }
+  },
+  {
+    "title": "维修完成趋势",
+    "source_type": "chart",
+    "position": {
+      "pc": {"x": 16, "y": 9, "cols": 8, "rows": 7},
+      "mobile": {"x": 0, "y": 38, "cols": 6, "rows": 7}
+    },
+    "chart": {
+      "app_key": "APP_KEY_REPAIR",
+      "name": "维修完成趋势",
+      "chart_type": "columnar",
+      "metric": "count(*)",
+      "group_by": ["完成日期"],
+      "filters": [
+        {"field_name": "维修说明", "operator": "contains", "value": "完成"},
+        {"field_name": "完成日期", "operator": "not_empty"}
+      ]
+    }
+  },
+  {
+    "title": "异常设备",
+    "source_type": "view",
+    "position": {
+      "pc": {"x": 0, "y": 16, "cols": 12, "rows": 11},
+      "mobile": {"x": 0, "y": 45, "cols": 6, "rows": 11}
+    },
+    "view_ref": {"app_key": "APP_KEY_DEVICE", "view_key": "VIEW_KEY_ABNORMAL_DEVICES"}
+  },
+  {
+    "title": "待处理工单",
+    "source_type": "view",
+    "position": {
+      "pc": {"x": 12, "y": 16, "cols": 12, "rows": 11},
+      "mobile": {"x": 0, "y": 56, "cols": 6, "rows": 11}
+    },
+    "view_ref": {"app_key": "APP_KEY_REPAIR", "view_key": "VIEW_KEY_PENDING_WORK_ORDERS"}
+  }
+]

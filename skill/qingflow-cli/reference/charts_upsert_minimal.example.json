@@ -1,0 +1,13 @@
+[
+  {
+    "name": "数据总量",
+    "chart_type": "target",
+    "metric": "count(*)",
+    "visibility": {
+      "mode": "workspace",
+      "selectors": {},
+      "external_mode": "not",
+      "external_selectors": {}
+    }
+  }
+]

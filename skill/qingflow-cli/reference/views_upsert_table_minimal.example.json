@@ -1,0 +1,42 @@
+{
+  "views": [
+    {
+      "operation": "upsert",
+      "app_key": "APP_KEY",
+      "name": "示例业务操作视图_CLI模板",
+      "type": "table",
+      "columns": ["主记录编号", "主记录名称", "状态", "负责人"],
+      "filters": [
+        {"field_name": "状态", "operator": "neq", "value": "已关闭"}
+      ],
+      "query_conditions": {
+        "enabled": true,
+        "exact": false,
+        "hide_before_query": false,
+        "rows": [["主记录编号", "主记录名称"], ["状态", "负责人"]]
+      },
+      "action_buttons": [
+        {
+          "text": "行内创建子记录",
+          "action": "add_data",
+          "target_app_key": "TARGET_APP_KEY",
+          "field_mappings": [
+            {"source_field": "数据ID", "target_field": "关联主记录"}
+          ],
+          "default_values": {"目标状态字段": "REPLACE_WITH_TARGET_OPTION_LABEL"},
+          "placement": "list"
+        },
+        {
+          "text": "详情创建子记录",
+          "action": "add_data",
+          "target_app_key": "TARGET_APP_KEY",
+          "field_mappings": [
+            {"source_field": "数据ID", "target_field": "关联主记录"}
+          ],
+          "default_values": {"目标状态字段": "REPLACE_WITH_TARGET_OPTION_LABEL"},
+          "placement": "detail"
+        }
+      ]
+    }
+  ]
+}

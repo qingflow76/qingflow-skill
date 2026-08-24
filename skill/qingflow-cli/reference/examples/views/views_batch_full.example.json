@@ -1,0 +1,159 @@
+{
+  "views": [
+    {
+      "operation": "upsert",
+      "app_key": "WORK_ORDER_APP_KEY",
+      "name": "生产工单执行视图",
+      "type": "table",
+      "columns": ["工单编号", "产品", "工单状态", "负责人", "计划完成日期"],
+      "filters": [
+        {"field_name": "工单状态", "operator": "in", "values": ["待排产", "生产中"]},
+        {"field_name": "产品", "operator": "contains", "value": "标准"},
+        {"field_name": "计划完成日期", "operator": "lte", "value": "2026-07-31"}
+      ],
+      "query_conditions": {
+        "enabled": true,
+        "exact": false,
+        "hide_before_query": false,
+        "rows": [["工单编号", "工单状态"], ["负责人", "计划完成日期"]]
+      },
+      "visibility": {
+        "mode": "workspace",
+        "selectors": {},
+        "external_mode": "not",
+        "external_selectors": {}
+      },
+      "action_buttons": [
+        {
+          "client_key": "create_quality_from_list",
+          "text": "行内创建质检",
+          "action": "add_data",
+          "target_app_key": "QUALITY_APP_KEY",
+          "field_mappings": [
+            {"source_field": "数据ID", "target_field": "关联工单"}
+          ],
+          "default_values": {"处理状态": "待处理"},
+          "placement": "list",
+          "primary": true,
+          "style_preset": "primary_blue",
+          "visible_when": [
+            {"field_name": "工单状态", "operator": "eq", "value": "生产中"}
+          ]
+        },
+        {
+          "client_key": "create_quality_from_detail",
+          "text": "详情创建质检",
+          "action": "add_data",
+          "target_app_key": "QUALITY_APP_KEY",
+          "field_mappings": [
+            {"source_field": "数据ID", "target_field": "关联工单"}
+          ],
+          "default_values": {"处理状态": "待处理"},
+          "placement": "detail",
+          "style_preset": "neutral_outline"
+        },
+        {
+          "client_key": "open_work_order_sop",
+          "text": "打开SOP",
+          "action": "link",
+          "url": "https://example.com/sop/work-order",
+          "placement": "header",
+          "style_preset": "text_blue"
+        }
+      ]
+    },
+    {
+      "operation": "upsert",
+      "app_key": "WORK_ORDER_APP_KEY",
+      "name": "工单状态看板",
+      "type": "board",
+      "columns": ["工单编号", "产品", "负责人", "计划完成日期"],
+      "group_by": "工单状态",
+      "filters": [
+        {"field_name": "工单状态", "operator": "not_empty"},
+        {"field_name": "关闭日期", "operator": "is_empty"}
+      ],
+      "query_conditions": {
+        "enabled": true,
+        "rows": [["工单编号", "负责人"], ["计划完成日期"]]
+      },
+      "action_buttons": [
+        {
+          "text": "看板行内创建质检",
+          "action": "add_data",
+          "target_app_key": "QUALITY_APP_KEY",
+          "field_mappings": [
+            {"source_field": "数据ID", "target_field": "关联工单"}
+          ],
+          "placement": "list",
+          "visible_when": [
+            {"field_name": "工单状态", "operator": "eq", "value": "已完工"}
+          ]
+        },
+        {
+          "text": "看板详情创建质检",
+          "action": "add_data",
+          "target_app_key": "QUALITY_APP_KEY",
+          "field_mappings": [
+            {"source_field": "数据ID", "target_field": "关联工单"}
+          ],
+          "placement": "detail"
+        }
+      ]
+    },
+    {
+      "operation": "upsert",
+      "app_key": "WORK_ORDER_APP_KEY",
+      "name": "工单计划甘特图",
+      "type": "gantt",
+      "columns": ["工单编号", "产品", "工单状态", "计划开始日期", "计划完成日期"],
+      "start_field": "计划开始日期",
+      "end_field": "计划完成日期",
+      "title_field": "工单编号",
+      "filters": [
+        {"field_name": "计划开始日期", "operator": "gte", "value": "2026-07-01"}
+      ],
+      "query_conditions": {
+        "enabled": true,
+        "rows": [["工单编号", "工单状态"], ["计划开始日期", "计划完成日期"]]
+      },
+      "action_buttons": [
+        {
+          "text": "详情查看排产说明",
+          "action": "link",
+          "url": "https://example.com/sop/schedule",
+          "placement": "detail"
+        }
+      ]
+    },
+    {
+      "operation": "patch",
+      "app_key": "WORK_ORDER_APP_KEY",
+      "view_key": "RAW_VIEW_KEY_TO_PATCH",
+      "set": {
+        "columns": ["工单编号", "工单状态", "负责人"],
+        "filters": [
+          {"field_name": "工单状态", "operator": "neq", "value": "已关闭"}
+        ],
+        "query_conditions": {
+          "enabled": true,
+          "rows": [["工单编号", "工单状态"], ["负责人"]]
+        },
+        "action_buttons": [
+          {
+            "text": "补充详情按钮",
+            "action": "link",
+            "url": "https://example.com/detail-help",
+            "placement": "detail"
+          }
+        ],
+        "action_buttons_mode": "merge"
+      }
+    },
+    {
+      "operation": "remove",
+      "app_key": "WORK_ORDER_APP_KEY",
+      "view_key": "RAW_VIEW_KEY_TO_REMOVE"
+    }
+  ]
+}

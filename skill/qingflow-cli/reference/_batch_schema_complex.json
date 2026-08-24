@@ -1,0 +1,18 @@
+[
+  {
+    "name": "BAT_sub",
+    "type": "subtable",
+    "subfields": [
+      {"name": "BAT_sub_a", "type": "text"},
+      {"name": "BAT_sub_b", "type": "number"}
+    ]
+  },
+  {
+    "name": "BAT_rel",
+    "type": "relation",
+    "target_app_key": "ead8ims5i401",
+    "relation_mode": "single",
+    "display_field": {"name": "单行文字"},
+    "visible_fields": [{"name": "多行文字"}]
+  }
+]

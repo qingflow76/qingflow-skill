@@ -1,0 +1,145 @@
+[
+  {
+    "title": "筛选条_实验项_勿默认交付",
+    "source_type": "filter",
+    "position": {
+      "pc": {
+        "x": 0,
+        "y": 0,
+        "cols": 24,
+        "rows": 2
+      },
+      "mobile": {
+        "x": 0,
+        "y": 0,
+        "cols": 6,
+        "rows": 2
+      }
+    },
+    "config": {
+      "filterConfig": [],
+      "graphList": [
+        {
+          "graphType": "CHART",
+          "graphKey": "REPLACE_WITH_QINGBI_CHART_ID",
+          "graphName": "可选_图表显示名"
+        }
+      ]
+    }
+  },
+  {
+    "title": "九宫格",
+    "source_type": "grid",
+    "position": {
+      "pc": {
+        "x": 0,
+        "y": 2,
+        "cols": 24,
+        "rows": 4
+      },
+      "mobile": {
+        "x": 0,
+        "y": 2,
+        "cols": 6,
+        "rows": 4
+      }
+    },
+    "config": {
+      "gridTitle": "九宫格",
+      "beingShowTitle": true,
+      "items": [
+        {
+          "type": 1,
+          "jumpMode": 1,
+          "linkAppKey": "YOUR_APP_KEY",
+          "linkFormType": 1,
+          "title": "应用入口",
+          "customTitle": "应用入口",
+          "beingCustomTitle": false
+        }
+      ]
+    }
+  },
+  {
+    "title": "说明文字块",
+    "source_type": "text",
+    "position": {
+      "pc": {
+        "x": 0,
+        "y": 6,
+        "cols": 24,
+        "rows": 2
+      },
+      "mobile": {
+        "x": 0,
+        "y": 6,
+        "cols": 6,
+        "rows": 2
+      }
+    },
+    "text": "本文件仅用于排障/实验：filter 在当前 CLI 直写中可能不落库；稳定自动化模板请使用 portal_sections_five_types.example.json。"
+  },
+  {
+    "title": "外部链接",
+    "source_type": "link",
+    "position": {
+      "pc": {
+        "x": 0,
+        "y": 8,
+        "cols": 24,
+        "rows": 2
+      },
+      "mobile": {
+        "x": 0,
+        "y": 8,
+        "cols": 6,
+        "rows": 2
+      }
+    },
+    "url": "https://example.com"
+  },
+  {
+    "title": "应用视图块",
+    "source_type": "view",
+    "position": {
+      "pc": {
+        "x": 0,
+        "y": 10,
+        "cols": 24,
+        "rows": 8
+      },
+      "mobile": {
+        "x": 0,
+        "y": 10,
+        "cols": 6,
+        "rows": 8
+      }
+    },
+    "view_ref": {
+      "app_key": "YOUR_APP_KEY",
+      "view_key": "YOUR_VIEW_KEY"
+    }
+  },
+  {
+    "title": "指标图",
+    "source_type": "chart",
+    "position": {
+      "pc": {
+        "x": 0,
+        "y": 18,
+        "cols": 24,
+        "rows": 6
+      },
+      "mobile": {
+        "x": 0,
+        "y": 18,
+        "cols": 6,
+        "rows": 6
+      }
+    },
+    "chart": {
+      "app_key": "YOUR_APP_KEY",
+      "chart_id": "YOUR_CHART_ID"
+    }
+  }
+]

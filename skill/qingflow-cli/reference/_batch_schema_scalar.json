@@ -1,0 +1,17 @@
+[
+  {"name": "BAT_text", "type": "text", "description": "批测"},
+  {"name": "BAT_long_text", "type": "long_text"},
+  {"name": "BAT_number", "type": "number"},
+  {"name": "BAT_amount", "type": "amount"},
+  {"name": "BAT_date", "type": "date"},
+  {"name": "BAT_datetime", "type": "datetime"},
+  {"name": "BAT_member", "type": "member"},
+  {"name": "BAT_phone", "type": "phone"},
+  {"name": "BAT_email", "type": "email"},
+  {"name": "BAT_address", "type": "address"},
+  {"name": "BAT_attachment", "type": "attachment"},
+  {"name": "BAT_boolean", "type": "boolean"},
+  {"name": "BAT_single_select", "type": "single_select", "options": ["A", "B"], "required": false},
+  {"name": "BAT_multi_select", "type": "multi_select", "options": ["X", "Y"], "required": false},
+  {"name": "BAT_dept", "type": "department", "department_scope": {"mode": "all"}}
+]
