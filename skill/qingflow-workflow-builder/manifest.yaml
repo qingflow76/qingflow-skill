@@ -1,0 +1,8 @@
+identity: qingflow_workflow_builder
+type: skill
+description: 在轻流应用中搭建工作流。从业务建模提取流程结构（含业务完整性自检：规模分级、组织层级、异常路径、状态闭环、角色分离），映射为声明式 WorkflowSpec，通过 qingflow CLI 的 schema/get/apply 三步部署工作流，并验证分支条件与自动化节点配置一致性。
+tags:
+  - qingflow
+  - workflow
+  - builder
+  - flow

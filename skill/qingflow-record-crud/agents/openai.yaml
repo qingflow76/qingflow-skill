@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qingflow Record CRUD"
+  short_description: "Legacy Qingflow CRUD overview"
+  default_prompt: "Use $qingflow-record-crud only as a compatibility overview. Prefer $qingflow-record-insert, $qingflow-record-update, $qingflow-record-delete, and $qingflow-record-import for the actual operational path."

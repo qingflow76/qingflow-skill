@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qingflow System Build"
+  short_description: "Build and modify Qingflow apps and systems"
+  default_prompt: "Use $qingflow-system-build to build or modify a Qingflow app or system safely, and verify environment routing and post-write readbacks when system-building flows touch live data."

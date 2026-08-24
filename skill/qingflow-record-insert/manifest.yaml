@@ -1,0 +1,6 @@
+identity: qingflow-record-insert
+type: skill
+description: Create Qingflow records. Default to record_insert_schema_get -> record_insert(items); one row is still an items array. Member, department, and relation fields prefer natural language, and failures are recovered from created_record_ids plus failed_fields.
+tags:
+  - cli
+  - qingflow

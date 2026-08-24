@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qingflow Task Ops"
+  short_description: "Use Qingflow task center, comments, directory, and workflow actions"
+  default_prompt: "Use $qingflow-task-ops for Qingflow task-center browsing, workload facets, comments, directory lookup, and workflow usage actions. Locate the exact target first, then run the smallest explicit task or comment action."
